@@ -157,6 +157,8 @@ public class UserService : IUserService
     {
         var user = await _context.Users
             .Include(u => u.RoleNavigation)
+            .Include(u => u.Cars)
+            .ThenInclude(c => c.StatusNavigation)
             .FirstOrDefaultAsync(u => u.Id == id);
         if (user == null)
             throw new KeyNotFoundException($"No user found with ID {id}.");
@@ -225,9 +227,22 @@ public class UserService : IUserService
 
     public async Task DeleteUser(int? id, CancellationToken cancellationToken)
     {
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+        var user = await _context.Users
+            .Include(u => u.UserFavorites)
+            .Include(u => u.Cars)
+            .FirstOrDefaultAsync(u => u.Id == id);
         if (user == null)
             throw new KeyNotFoundException($"No user found with ID {id}.");
+
+        foreach (var carFav in user.UserFavorites)
+        {
+            _context.UserFavorites.Remove(carFav);
+        }
+
+        foreach (var car in user.Cars)
+        {
+            _context.Cars.Remove(car);
+        }
         
         _context.Users.Remove(user);
         await _context.SaveChangesAsync(cancellationToken);
