@@ -32,7 +32,6 @@ public partial class CarListingContext : DbContext
 
             entity.HasIndex(e => e.Vin, "IX_Car_VIN").IsUnique();
 
-            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.Vin).HasColumnName("VIN");
 
             entity.HasOne(d => d.SellerNavigation).WithMany(p => p.Cars)
@@ -47,15 +46,11 @@ public partial class CarListingContext : DbContext
         modelBuilder.Entity<Role>(entity =>
         {
             entity.ToTable("Role");
-
-            entity.Property(e => e.Id).ValueGeneratedNever();
         });
 
         modelBuilder.Entity<Status>(entity =>
         {
             entity.ToTable("Status");
-
-            entity.Property(e => e.Id).ValueGeneratedNever();
         });
 
         modelBuilder.Entity<User>(entity =>
@@ -66,7 +61,6 @@ public partial class CarListingContext : DbContext
 
             entity.HasIndex(e => e.Username, "IX_User_Username").IsUnique();
 
-            entity.Property(e => e.Id).ValueGeneratedNever();
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("CURRENT_TIMESTAMP")
                 .HasColumnType("datetime");

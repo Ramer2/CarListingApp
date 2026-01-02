@@ -9,4 +9,6 @@ public interface IUserService
     public Task<UserDto> GetUserById(int? id, CancellationToken cancellationToken);
     
     public Task<UserDto> CreateUser(CreateUserDto createUserDto, CancellationToken cancellationToken);
+    
+    public Task<UserDto> UpdateUser(CreateUserDto updateUserDto, int id, CancellationToken cancellationToken);
 }

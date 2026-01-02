@@ -18,5 +18,7 @@ public class CreateUserDto
 
     [Required]
     public string RoleName { get; set; } = null!;
+    
+    public bool IsBlocked { get; set; }
 
 }

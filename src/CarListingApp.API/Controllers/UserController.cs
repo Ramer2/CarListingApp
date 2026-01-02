@@ -70,4 +70,27 @@ public class UserController
             return Results.Problem(ex.Message);
         }
     }
+
+    [HttpPut]
+    [Route("{id}")]
+    public async Task<IResult> UpdateUser([FromBody] CreateUserDto createUserDto, int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var user = await _userService.UpdateUser(createUserDto, id, cancellationToken);
+            return Results.Ok(user);
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Results.NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(ex.Message);
+        }
+    }
 }

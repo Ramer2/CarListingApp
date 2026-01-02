@@ -4,7 +4,7 @@
 -- tables
 -- Table: Car
 CREATE TABLE Car (
-                     Id integer NOT NULL CONSTRAINT Car_pk PRIMARY KEY,
+                     Id integer NOT NULL CONSTRAINT Car_pk PRIMARY KEY AUTOINCREMENT,
                      Price real NOT NULL,
                      Brand text NOT NULL,
                      Model text NOT NULL,
@@ -25,19 +25,19 @@ CREATE TABLE Car (
 
 -- Table: Role
 CREATE TABLE Role (
-                      Id integer NOT NULL CONSTRAINT Role_pk PRIMARY KEY,
+                      Id integer NOT NULL CONSTRAINT Role_pk PRIMARY KEY AUTOINCREMENT,
                       RoleName text NOT NULL
 );
 
 -- Table: Status
 CREATE TABLE Status (
-                        Id integer NOT NULL CONSTRAINT Status_pk PRIMARY KEY,
+                        Id integer NOT NULL CONSTRAINT Status_pk PRIMARY KEY AUTOINCREMENT,
                         StatusName text NOT NULL
 );
 
 -- Table: User
 CREATE TABLE User (
-                      Id integer NOT NULL CONSTRAINT User_pk PRIMARY KEY,
+                      Id integer NOT NULL CONSTRAINT User_pk PRIMARY KEY AUTOINCREMENT,
                       Username text NOT NULL UNIQUE,
                       Email text NOT NULL UNIQUE,
                       PasswordHash text NOT NULL,
