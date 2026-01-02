@@ -137,7 +137,9 @@ public class UserService : IUserService
         _context.Users.Add(newUser);
         await _context.SaveChangesAsync(cancellationToken);
         
-        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email.Equals(createUserDto.Email));
+        var user = await _context.Users
+            .Include(u => u.RoleNavigation)
+            .FirstOrDefaultAsync(u => u.Email.Equals(createUserDto.Email));
         
         return new UserDto
         {
