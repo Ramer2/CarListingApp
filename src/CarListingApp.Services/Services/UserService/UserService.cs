@@ -159,7 +159,7 @@ public class UserService : IUserService
             .Include(u => u.RoleNavigation)
             .FirstOrDefaultAsync(u => u.Id == id);
         if (user == null)
-            throw new ArgumentException($"No user found with ID {id}.");
+            throw new KeyNotFoundException($"No user found with ID {id}.");
 
         if (!user.Email.Equals(updateUserDto.Email))
         {
@@ -221,5 +221,15 @@ public class UserService : IUserService
             Role = role.RoleName,
             ListedCars = listedCarsDto
         };
+    }
+
+    public async Task DeleteUser(int? id, CancellationToken cancellationToken)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Id == id);
+        if (user == null)
+            throw new KeyNotFoundException($"No user found with ID {id}.");
+        
+        _context.Users.Remove(user);
+        await _context.SaveChangesAsync(cancellationToken);
     }
 }

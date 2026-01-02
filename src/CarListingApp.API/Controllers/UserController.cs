@@ -93,4 +93,23 @@ public class UserController
             return Results.Problem(ex.Message);
         }
     }
+
+    [HttpDelete]
+    [Route("{id}")]
+    public async Task<IResult> DeleteUser(int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _userService.DeleteUser(id, cancellationToken);
+            return Results.NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Results.NotFound(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(ex.Message);
+        }
+    }
 }

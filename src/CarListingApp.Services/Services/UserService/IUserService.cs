@@ -11,4 +11,6 @@ public interface IUserService
     public Task<UserDto> CreateUser(CreateUserDto createUserDto, CancellationToken cancellationToken);
     
     public Task<UserDto> UpdateUser(CreateUserDto updateUserDto, int id, CancellationToken cancellationToken);
+    
+    public Task DeleteUser(int? id, CancellationToken cancellationToken);
 }
