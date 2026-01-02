@@ -1,4 +1,5 @@
-﻿using CarListingApp.Services.Services.UserService;
+﻿using CarListingApp.Services.DTOs;
+using CarListingApp.Services.Services.UserService;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CarListingApp.API.Controllers;
@@ -32,7 +33,7 @@ public class UserController
     {
         try
         {
-            return Results.Ok( await _userService.GetUserById(id, cancellationToken));
+            return Results.Ok(await _userService.GetUserById(id, cancellationToken));
         }
         catch (KeyNotFoundException ex)
         {
@@ -41,6 +42,28 @@ public class UserController
         catch (ArgumentException ex)
         {
             return Results.BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(ex.Message);
+        }
+    }
+
+    [HttpPost]
+    public async Task<IResult> CreateUser([FromBody] CreateUserDto createUserDto, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var user = await _userService.CreateUser(createUserDto, cancellationToken);
+            return Results.Ok(user);
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Results.NotFound(ex.Message);
         }
         catch (Exception ex)
         {

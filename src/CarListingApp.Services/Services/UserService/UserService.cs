@@ -9,7 +9,6 @@ namespace CarListingApp.Services.Services.UserService;
 
 public class UserService : IUserService
 {
-    private readonly string _emailRegex = @"[^@ \t\r\n]+@[^@ \t\r\n]+\.[^@ \t\r\n]+";
     private readonly PasswordHasher<User> _passwordHasher = new();
     private readonly CarListingContext _context;
 
@@ -105,6 +104,45 @@ public class UserService : IUserService
             IsBlocked = user.IsBlocked,
             Role = user.RoleNavigation.RoleName,
             ListedCars = listedCars,
+        };
+    }
+
+    public async Task<UserDto> CreateUser(CreateUserDto createUserDto, CancellationToken cancellationToken)
+    {
+        var emailCheck = await _context.Users.FirstOrDefaultAsync(u => u.Email.Equals(createUserDto.Email));
+        if (emailCheck != null)
+            throw new ArgumentException("An account with this email already exists.");
+
+        var usernameCheck = await _context.Users.FirstOrDefaultAsync(u => u.Username.Equals(createUserDto.Username));
+        if (usernameCheck != null)
+            throw new ArgumentException("This username is already taken.");
+
+        var role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName.Equals(createUserDto.RoleName));
+        if (role == null)
+            throw new KeyNotFoundException($"No role with name {createUserDto.RoleName} found.");
+
+        var newUser = new User
+        {
+            Username = createUserDto.Username,
+            Email = createUserDto.Email,
+            CreatedAt =  DateTime.Now,
+            IsBlocked = false,
+            RoleNavigation = role
+        };
+        
+        newUser.PasswordHash = _passwordHasher.HashPassword(newUser, createUserDto.Password);
+
+        _context.Users.Add(newUser);
+        await _context.SaveChangesAsync(cancellationToken);
+        
+        return new UserDto
+        {
+            Username = newUser.Username,
+            Email = newUser.Email,
+            CreatedAt = newUser.CreatedAt.ToString(CultureInfo.InvariantCulture),
+            IsBlocked = newUser.IsBlocked,
+            Role = role.RoleName,
+            ListedCars = new List<CarDto>()
         };
     }
 }
