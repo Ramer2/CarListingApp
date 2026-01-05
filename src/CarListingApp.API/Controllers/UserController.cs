@@ -1,4 +1,5 @@
 ﻿using CarListingApp.Services.DTOs;
+using CarListingApp.Services.DTOs.User;
 using CarListingApp.Services.Services.UserService;
 using Microsoft.AspNetCore.Mvc;
 

@@ -1,4 +1,5 @@
 ﻿using CarListingApp.Services.DTOs;
+using CarListingApp.Services.DTOs.User;
 
 namespace CarListingApp.Services.Services.UserService;
 

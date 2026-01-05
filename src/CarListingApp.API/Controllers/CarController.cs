@@ -1,4 +1,6 @@
-﻿using CarListingApp.Services.Services.CarService;
+﻿using CarListingApp.Models.Models;
+using CarListingApp.Services.DTOs.Car;
+using CarListingApp.Services.Services.CarService;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CarListingApp.API.Controllers;
@@ -34,6 +36,27 @@ public class CarController
         try
         {
             return Results.Ok(await _carService.GetById(id, cancellationToken));
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Results.NotFound(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(ex.Message);
+        }
+    }
+
+    [HttpPost]
+    public async Task<IResult> CreateCar([FromBody] CreateCarDto createCarDto, CancellationToken cancellationToken)
+    {
+        try
+        {
+            return Results.Ok(await _carService.CreateCar(createCarDto, cancellationToken));
         }
         catch (KeyNotFoundException ex)
         {

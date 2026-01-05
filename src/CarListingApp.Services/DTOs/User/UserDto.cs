@@ -1,6 +1,6 @@
-﻿using CarListingApp.Models.Models;
+﻿using CarListingApp.Services.DTOs.Car;
 
-namespace CarListingApp.Services.DTOs;
+namespace CarListingApp.Services.DTOs.User;
 
 public class UserDto
 {

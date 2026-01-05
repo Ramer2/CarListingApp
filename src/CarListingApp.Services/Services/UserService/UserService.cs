@@ -2,6 +2,8 @@
 using CarListingApp.DAL.DBContext;
 using CarListingApp.Models.Models;
 using CarListingApp.Services.DTOs;
+using CarListingApp.Services.DTOs.Car;
+using CarListingApp.Services.DTOs.User;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
