@@ -24,7 +24,7 @@ public class UserService : IUserService
                     .Include(u => u.RoleNavigation)
                     .Include(u => u.Cars)
                     .ThenInclude(c => c.StatusNavigation)
-                    .ToListAsync();
+                    .ToListAsync(cancellationToken);
         
         foreach (var user in users)
         {
@@ -73,7 +73,7 @@ public class UserService : IUserService
             .Include(u => u.RoleNavigation)
             .Include(u => u.Cars)
             .ThenInclude(c => c.StatusNavigation)
-            .FirstOrDefaultAsync();
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (user == null)
             throw new KeyNotFoundException($"User with ID {id} not found.");
@@ -111,15 +111,15 @@ public class UserService : IUserService
 
     public async Task<UserDto> CreateUser(CreateUserDto createUserDto, CancellationToken cancellationToken)
     {
-        var emailCheck = await _context.Users.FirstOrDefaultAsync(u => u.Email.Equals(createUserDto.Email));
+        var emailCheck = await _context.Users.FirstOrDefaultAsync(u => u.Email.Equals(createUserDto.Email), cancellationToken);
         if (emailCheck != null)
             throw new ArgumentException("An account with this email already exists.");
 
-        var usernameCheck = await _context.Users.FirstOrDefaultAsync(u => u.Username.Equals(createUserDto.Username));
+        var usernameCheck = await _context.Users.FirstOrDefaultAsync(u => u.Username.Equals(createUserDto.Username), cancellationToken);
         if (usernameCheck != null)
             throw new ArgumentException("This username is already taken.");
 
-        var role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName.Equals(createUserDto.RoleName));
+        var role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName.Equals(createUserDto.RoleName), cancellationToken);
         if (role == null)
             throw new KeyNotFoundException($"No role with name {createUserDto.RoleName} found.");
 
@@ -139,7 +139,7 @@ public class UserService : IUserService
         
         var user = await _context.Users
             .Include(u => u.RoleNavigation)
-            .FirstOrDefaultAsync(u => u.Email.Equals(createUserDto.Email));
+            .FirstOrDefaultAsync(u => u.Email.Equals(createUserDto.Email), cancellationToken);
         
         return new UserDto
         {
@@ -159,20 +159,20 @@ public class UserService : IUserService
             .Include(u => u.RoleNavigation)
             .Include(u => u.Cars)
             .ThenInclude(c => c.StatusNavigation)
-            .FirstOrDefaultAsync(u => u.Id == id);
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         if (user == null)
             throw new KeyNotFoundException($"No user found with ID {id}.");
 
         if (!user.Email.Equals(updateUserDto.Email))
         {
-            var emailCheck = await _context.Users.FirstOrDefaultAsync(u => u.Email.Equals(updateUserDto.Email));
+            var emailCheck = await _context.Users.FirstOrDefaultAsync(u => u.Email.Equals(updateUserDto.Email), cancellationToken);
             if (emailCheck != null)
                 throw new ArgumentException("An account with this email already exists.");
         }
         
         if (!user.Username.Equals(updateUserDto.Username))
         {
-            var emailCheck = await _context.Users.FirstOrDefaultAsync(u => u.Email.Equals(updateUserDto.Username));
+            var emailCheck = await _context.Users.FirstOrDefaultAsync(u => u.Email.Equals(updateUserDto.Username), cancellationToken);
             if (emailCheck != null)
                 throw new ArgumentException("An account with this username already exists.");
         }
@@ -180,7 +180,7 @@ public class UserService : IUserService
         var role = new Role();
         if (!user.RoleNavigation.RoleName.Equals(updateUserDto.RoleName))
         {
-            role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName.Equals(updateUserDto.RoleName));
+            role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName.Equals(updateUserDto.RoleName), cancellationToken);
             if (role == null)
                 throw new KeyNotFoundException($"No role with name {updateUserDto.RoleName} found.");
         }
@@ -230,7 +230,7 @@ public class UserService : IUserService
         var user = await _context.Users
             .Include(u => u.UserFavorites)
             .Include(u => u.Cars)
-            .FirstOrDefaultAsync(u => u.Id == id);
+            .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         if (user == null)
             throw new KeyNotFoundException($"No user found with ID {id}.");
 

@@ -1,4 +1,5 @@
 using CarListingApp.DAL.DBContext;
+using CarListingApp.Services.Services.CarService;
 using CarListingApp.Services.Services.UserService;
 using Microsoft.EntityFrameworkCore;
 
@@ -8,6 +9,7 @@ var connectionString = builder.Configuration.GetConnectionString("CarListingDB")
 builder.Services.AddDbContext<CarListingContext>(options => options.UseSqlite(connectionString));
 
 builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ICarService, CarService>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();
