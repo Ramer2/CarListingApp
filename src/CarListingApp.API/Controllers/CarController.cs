@@ -1,5 +1,4 @@
-﻿using CarListingApp.Models.Models;
-using CarListingApp.Services.DTOs.Car;
+﻿using CarListingApp.Services.DTOs.Car;
 using CarListingApp.Services.Services.CarService;
 using Microsoft.AspNetCore.Mvc;
 

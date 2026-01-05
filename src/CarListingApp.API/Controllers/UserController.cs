@@ -1,6 +1,6 @@
-﻿using CarListingApp.Services.DTOs;
-using CarListingApp.Services.DTOs.User;
+﻿using CarListingApp.Services.DTOs.User;
 using CarListingApp.Services.Services.UserService;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CarListingApp.API.Controllers;
@@ -16,6 +16,7 @@ public class UserController
         _userService = userService;
     }
 
+    [Authorize(Roles = "Admin")]
     [HttpGet]
     public async Task<IResult> GetAll(CancellationToken cancellationToken)
     {
