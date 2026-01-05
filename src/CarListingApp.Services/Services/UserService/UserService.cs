@@ -34,6 +34,7 @@ public class UserService : IUserService
             {
                 listedCars.Add(new CarDto
                 {
+                    Id = car.Id,
                     Price = car.Price,
                     Brand = car.Brand,
                     Model = car.Model,
@@ -83,6 +84,7 @@ public class UserService : IUserService
         {
             listedCars.Add(new CarDto
             {
+                Id = car.Id,
                 Price = car.Price,
                 Brand = car.Brand,
                 Model = car.Model,

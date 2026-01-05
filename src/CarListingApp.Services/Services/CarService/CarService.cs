@@ -24,6 +24,7 @@ public class CarService : ICarService
         {
             carDtos.Add(new CarDto
             {
+                Id = car.Id,
                 Price = car.Price,
                 Brand = car.Brand,
                 Model = car.Model,
@@ -55,6 +56,7 @@ public class CarService : ICarService
 
         return new CarDto
         {
+            Id = car.Id,
             Price = car.Price,
             Brand = car.Brand,
             Model = car.Model,

@@ -4,6 +4,8 @@ namespace CarListingApp.Services.DTOs;
 
 public class CarDto
 {
+    public int Id { get; set; }
+    
     public double Price { get; set; }
 
     public string Brand { get; set; } = null!;
