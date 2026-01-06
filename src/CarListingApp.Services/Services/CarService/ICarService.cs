@@ -8,5 +8,5 @@ public interface ICarService
     
     public Task<CarDto> GetById(int? id, CancellationToken cancellationToken);
     
-    public Task<CarDto> CreateCar(CreateCarDto createCarDto, CancellationToken cancellationToken);
+    public Task<CarDto> CreateCar(CreateCarDto createCarDto, string sellerEmail, CancellationToken cancellationToken);
 }
