@@ -8,6 +8,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarListingApp.DAL", "src\Ca
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarListingApp.Services", "src\CarListingApp.Services\CarListingApp.Services.csproj", "{D685CC54-B9A7-44A2-B068-69842CE68336}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CarListingApp.Client", "src\CarListingApp.Client\CarListingApp.Client.csproj", "{2C477B5E-0D55-4899-AA97-41D5DD27E8A4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -30,5 +32,9 @@ Global
 		{D685CC54-B9A7-44A2-B068-69842CE68336}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{D685CC54-B9A7-44A2-B068-69842CE68336}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{D685CC54-B9A7-44A2-B068-69842CE68336}.Release|Any CPU.Build.0 = Release|Any CPU
+		{2C477B5E-0D55-4899-AA97-41D5DD27E8A4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C477B5E-0D55-4899-AA97-41D5DD27E8A4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C477B5E-0D55-4899-AA97-41D5DD27E8A4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C477B5E-0D55-4899-AA97-41D5DD27E8A4}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 EndGlobal

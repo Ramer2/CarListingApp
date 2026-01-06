@@ -1,0 +1,83 @@
+﻿@page "/car/create"
+@attribute [Authorize]
+@using CarListingApp.Services.DTOs.Car
+@using Microsoft.AspNetCore.Authorization
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<div style="max-width: 800px; margin: 0 auto;">
+    <h1 style="font-weight: 900; letter-spacing: -1px; margin-bottom: 2rem;">NEW LISTING ENTRY</h1>
+
+    <EditForm Model="_carModel" OnValidSubmit="HandleSubmit">
+        <DataAnnotationsValidator />
+
+        <div class="heavy-card" style="flex-direction: column;">
+            <div class="card-content" style="border-right: none;">
+                
+                <div class="row-flex">
+                    <div class="input-group">
+                        <label>BRAND</label>
+                        <InputText @bind-Value="_carModel.Brand" class="custom-input" placeholder="e.g. BMW" />
+                    </div>
+                    <div class="input-group">
+                        <label>MODEL</label>
+                        <InputText @bind-Value="_carModel.Model" class="custom-input" placeholder="e.g. M4" />
+                    </div>
+                </div>
+
+                <div class="row-flex mt-3">
+                    <div class="input-group">
+                        <label>PRICE ($)</label>
+                        <InputNumber @bind-Value="_carModel.Price" class="custom-input" />
+                    </div>
+                    <div class="input-group">
+                        <label>YEAR</label>
+                        <InputNumber @bind-Value="_carModel.Year" class="custom-input" />
+                    </div>
+                </div>
+
+                <div class="input-group mt-3">
+                    <label>DESCRIPTION</label>
+                    <InputTextArea @bind-Value="_carModel.Description" class="custom-input" rows="4" placeholder="Vehicle condition, history, etc..." />
+                </div>
+
+                <div class="mt-4">
+                    <button type="submit" class="btn-black" style="width: auto; padding: 15px 40px;">
+                        PUBLISH LISTING
+                    </button>
+                </div>
+            </div>
+        </div>
+    </EditForm>
+</div>
+
+<style>
+    .row-flex { display: flex; gap: 20px; }
+    .input-group { flex: 1; display: flex; flex-direction: column; }
+    .input-group label { font-size: 0.7rem; font-weight: 900; margin-bottom: 5px; }
+    
+    .custom-input {
+        border: 2px solid black;
+        padding: 10px;
+        font-family: inherit;
+        outline: none;
+        background: white;
+    }
+
+    .custom-input:focus { background: #f0f0f0; }
+    .mt-3 { margin-top: 1rem; }
+    .mt-4 { margin-top: 1.5rem; }
+</style>
+
+@code {
+    private CreateCarDto _carModel = new();
+
+    private async Task HandleSubmit()
+    {
+        var response = await Http.PostAsJsonAsync("cars", _carModel);
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/");
+        }
+    }
+}

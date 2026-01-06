@@ -72,6 +72,46 @@ public class UserController : ControllerBase
         }
     }
     
+    [Authorize(Roles = "Admin, User, Dealer")]
+    [HttpGet("by-email/{email}")]
+    public async Task<IResult> GetUserByEmail(string email, CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (User.IsInRole("Admin"))
+            {
+                return Results.Ok(await _userService.GetUserByEmail(email, cancellationToken));
+            }
+            else
+            {
+                var tokenEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+                if (tokenEmail == null)
+                    return Results.Problem("Invalid credentials.");
+
+                if (!tokenEmail.Equals(email, StringComparison.OrdinalIgnoreCase))
+                    return Results.Forbid();
+
+                return Results.Ok(await _userService.GetUserByEmail(tokenEmail, cancellationToken));
+            }
+        }
+        catch (AccessViolationException)
+        {
+            return Results.Forbid();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Results.NotFound(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(ex.Message);
+        }
+    }
+    
     [HttpPost("")]
     public async Task<IResult> CreateUser([FromBody] CreateUserDto createUserDto, CancellationToken cancellationToken)
     {

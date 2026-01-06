@@ -16,5 +16,5 @@ public class UserDto
 
     public string Role { get; set; }
 
-    public ICollection<CarDto> ListedCars { get; set; } = new List<CarDto>();
+    public List<CarDto> ListedCars { get; set; } = new();
 }

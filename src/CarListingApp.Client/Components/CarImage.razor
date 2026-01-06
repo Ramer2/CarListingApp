@@ -1,0 +1,10 @@
+﻿<div class="card-img-top bg-secondary d-flex align-items-center justify-content-center text-white" 
+     style="height: 200px; font-size: 2rem;">
+    <i class="bi bi-truck"></i> 
+    <span class="ms-2">@Brand @Model</span>
+</div>
+
+@code {
+    [Parameter] public string Brand { get; set; }
+    [Parameter] public string Model { get; set; }
+}

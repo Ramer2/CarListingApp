@@ -1,0 +1,24 @@
+﻿@using CarListingApp.Client.Components
+@inherits LayoutComponentBase
+
+<div class="app-wrapper">
+    <header>
+        <div class="container-70">
+            <NavMenu />
+        </div>
+    </header>
+
+    <main>
+        <div class="container-70">
+            @Body
+        </div>
+    </main>
+
+    <footer>
+        <div class="container-70">
+            <p class="mb-0 text-uppercase fw-bold" style="font-size: 0.7rem;">
+                Car Listing Engine &copy; 2026 // System Operational
+            </p>
+        </div>
+    </footer>
+</div>

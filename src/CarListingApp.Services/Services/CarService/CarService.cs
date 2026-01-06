@@ -18,6 +18,7 @@ public class CarService : ICarService
     {
         var cars = await _context.Cars
             .Include(c => c.StatusNavigation)
+            .Include(c => c.SellerNavigation)
             .ToListAsync(cancellationToken);
         var carDtos = new List<CarDto>();
 
@@ -35,6 +36,7 @@ public class CarService : ICarService
                 EngineDisplacement = car.EngineDisplacement,
                 EnginePower = car.EnginePower,
                 Mileage = car.Mileage,
+                SellerId = car.SellerNavigation.Id,
                 Status = car.StatusNavigation.StatusName,
                 Description = car.Description,
             });
@@ -50,6 +52,7 @@ public class CarService : ICarService
         
         var car = await _context.Cars
             .Include(c => c.StatusNavigation)
+            .Include(c => c.SellerNavigation)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
         if (car == null)
@@ -67,6 +70,7 @@ public class CarService : ICarService
             EngineDisplacement = car.EngineDisplacement,
             EnginePower = car.EnginePower,
             Mileage = car.Mileage,
+            SellerId = car.SellerNavigation.Id,
             Status = car.StatusNavigation.StatusName,
             Description = car.Description
         };
@@ -121,6 +125,7 @@ public class CarService : ICarService
         
         var car = await _context.Cars
             .Include(c => c.StatusNavigation)
+            .Include(c => c.SellerNavigation)
             .FirstOrDefaultAsync(c => c.Id == newCar.Id, cancellationToken);
 
         return new CarDto
@@ -135,6 +140,7 @@ public class CarService : ICarService
             EngineDisplacement = car.EngineDisplacement,
             EnginePower = car.EnginePower,
             Mileage = car.Mileage,
+            SellerId = car.SellerNavigation.Id,
             Status = car.StatusNavigation.StatusName,
             Description = car.Description,
         };
@@ -205,6 +211,7 @@ public class CarService : ICarService
             EngineDisplacement = car.EngineDisplacement,
             EnginePower = car.EnginePower,
             Mileage = car.Mileage,
+            SellerId = car.SellerNavigation.Id,
             Status = car.StatusNavigation.StatusName,
             Description = car.Description
         };

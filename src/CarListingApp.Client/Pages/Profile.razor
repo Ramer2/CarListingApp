@@ -1,0 +1,106 @@
+﻿@page "/account"
+@attribute [Authorize]
+@using System.Security.Claims
+@using CarListingApp.Services.DTOs.User
+@using Microsoft.AspNetCore.Components.Authorization
+
+@using Microsoft.AspNetCore.Authorization
+@inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
+
+<h1 class="fw-900">ACCOUNT_PROFILE</h1>
+
+@if (fullUserData == null)
+{
+    <div class="heavy-card" style="padding: 40px; border-style: dashed;">
+        <h3 class="fw-900">SYSTEM_STATUS: @debugMessage</h3>
+    </div>
+}
+else
+{
+    @* The Profile Header *@
+    <div class="heavy-card">
+        <div class="card-left-visual" style="background: #ff00ff; width: 30%; color: white;">
+            <i class="bi bi-person-fill" style="font-size: 5rem;"></i>
+            <div class="mt-2 fw-bold text-uppercase" style="background: black; padding: 5px 10px;">@fullUserData.Username</div>
+        </div>
+
+        <div class="card-right-info">
+            <div class="info-grid" style="grid-template-columns: 1fr;">
+                <div class="info-item"><strong>EMAIL:</strong> @fullUserData.Email</div>
+                <div class="info-item"><strong>ROLE:</strong> @fullUserData.Role</div>
+                <div class="info-item"><strong>DATABASE_ID:</strong> @fullUserData.Id</div>
+                <div class="info-item"><strong>STATUS:</strong> @(fullUserData.IsBlocked ? "LOCKED" : "OPERATIONAL")</div>
+            </div>
+        </div>
+    </div>
+
+    @* The User's Car Listings *@
+    <h3 class="fw-900 mt-5">LISTING_HISTORY (@(fullUserData.ListedCars?.Count ?? 0))</h3>
+    <div class="history-list">
+        @foreach (var car in fullUserData.ListedCars)
+        {
+            <div class="heavy-card" style="margin-bottom: 15px; background: white;">
+                <div style="padding: 20px; flex: 1; border-right: 2px solid black;">
+                    <div style="font-size: 0.6rem; font-weight: 900; color: #888;">VEHICLE_ID: #@car.Id</div>
+                    <h4 style="margin: 5px 0; font-weight: 900;">@car.Brand.ToUpper() @car.Model.ToUpper()</h4>
+                    <span class="status-badge" style="background: @(car.Status == "Active" ? "#00ff00" : "magenta"); color: @(car.Status == "Active" ? "black" : "white");">
+                        @car.Status.ToUpper()
+                    </span>
+                </div>
+                <div style="width: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fafafa;">
+                    <div style="font-weight: 900; font-size: 1.2rem;">$@car.Price.ToString("N0")</div>
+                    <a href="/car/@car.Id" style="font-size: 0.7rem; color: black; font-weight: bold; margin-top: 10px;">VIEW_DETAILS</a>
+                </div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private UserDto? fullUserData;
+    private string debugMessage = "INITIALIZING...";
+
+    protected override async Task OnInitializedAsync()
+    {
+        try 
+        {
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var user = authState.User;
+
+            // 1. Rename to userEmail to avoid naming conflicts
+            var userEmail = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value ?? user.FindFirst("emailaddress")?.Value;;
+
+            if (string.IsNullOrEmpty(userEmail))
+            {
+                debugMessage = "ERROR: EMAIL_CLAIM_MISSING_FROM_TOKEN<" + userEmail + ">";
+                return;
+            }
+
+            debugMessage = "SYNCING_DATA_FOR: " + userEmail?.ToUpper() + "...";
+
+            // 2. Escape the email for the URL (converts @ to %40)
+            var encodedEmail = Uri.EscapeDataString(userEmail);
+            
+            // 3. Use the explicit variable in the string
+            var requestUrl = $"users/by-email/{encodedEmail}";
+            var response = await Http.GetAsync(requestUrl);
+
+            if (response.IsSuccessStatusCode)
+            {
+                fullUserData = await response.Content.ReadFromJsonAsync<UserDto>();
+                debugMessage = "SUCCESS";
+            }
+            else
+            {
+                var errorBody = await response.Content.ReadAsStringAsync();
+                debugMessage = $"SERVER_REJECTED: {response.StatusCode}";
+            }
+        }
+        catch (Exception ex)
+        {
+            debugMessage = $"CRITICAL_EXCEPTION: {ex.Message}";
+            Console.WriteLine(ex.ToString());
+        }
+    }
+}

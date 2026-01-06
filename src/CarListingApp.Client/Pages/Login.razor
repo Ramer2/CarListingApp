@@ -1,0 +1,45 @@
+﻿@page "/login"
+@using Blazored.LocalStorage
+@using CarListingApp.Client.Auth
+@using CarListingApp.Services.DTOs.Auth
+@using Microsoft.AspNetCore.Components.Authorization
+@inject HttpClient Http
+@inject ILocalStorageService LocalStorage
+@inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+
+<div class="container mt-5" style="max-width: 400px;">
+    <h3>Login</h3>
+    <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+        <div class="mb-3">
+            <label>Username or Email</label>
+            <InputText @bind-Value="identifier" class="form-control" />
+        </div>
+        <div class="mb-3">
+            <label>Password</label>
+            <InputText @bind-Value="loginModel.Password" type="password" class="form-control" />
+        </div>
+        <button type="submit" class="btn btn-primary">Login</button>
+    </EditForm>
+</div>
+
+@code {
+    private LoginUserDto loginModel = new();
+    private string identifier;
+
+    private async Task HandleLogin()
+    {
+        // Simple logic to determine if input is email or username
+        if (identifier.Contains("@")) loginModel.Email = identifier;
+        else loginModel.Username = identifier;
+
+        var response = await Http.PostAsJsonAsync("login", loginModel);
+        if (response.IsSuccessStatusCode)
+        {
+            var result = await response.Content.ReadFromJsonAsync<TokenDto>();
+            await LocalStorage.SetItemAsync("authToken", result.AccessToken);
+            ((CustomAuthStateProvider)AuthStateProvider).NotifyUserAuthentication(result.AccessToken);
+            Nav.NavigateTo("/");
+        }
+    }
+}

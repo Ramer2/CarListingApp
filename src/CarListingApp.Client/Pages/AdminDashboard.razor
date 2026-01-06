@@ -1,0 +1,62 @@
+﻿@page "/admin/users"
+@attribute [Authorize(Roles = "Admin")]
+@using CarListingApp.Services.DTOs.User
+@using Microsoft.AspNetCore.Authorization
+@inject HttpClient Http
+
+<h3 class="mb-4">User Management</h3>
+
+<div class="card shadow-sm">
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+            <tr>
+                <th>ID</th>
+                <th>Username</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Status</th>
+            </tr>
+            </thead>
+            <tbody>
+            @if (users == null)
+            {
+                <tr><td colspan="5" class="text-center">Loading users...</td></tr>
+            }
+            else
+            {
+                @foreach (var user in users)
+                {
+                    <tr>
+                        <td>@user.Id</td>
+                        <td>@user.Username</td>
+                        <td>@user.Email</td>
+                        <td><span class="badge bg-secondary">@user.Role</span></td>
+                        <td>
+                            @if (user.IsBlocked)
+                            {
+                                <span class="badge bg-danger">Blocked</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">Active</span>
+                            }
+                        </td>
+                    </tr>
+                }
+            }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+@code {
+    private List<UserDto>? users;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try {
+            users = await Http.GetFromJsonAsync<List<UserDto>>("users");
+        } catch { /* Handle unauthorized or error */ }
+    }
+}

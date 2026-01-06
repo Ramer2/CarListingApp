@@ -21,6 +21,8 @@ public class CarDto
     public double? EnginePower { get; set; }
 
     public int? Mileage { get; set; }
+    
+    public int SellerId { get; set; }
 
     public string Status { get; set; }
 

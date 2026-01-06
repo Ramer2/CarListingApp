@@ -1,0 +1,41 @@
+﻿@page "/"
+@using CarListingApp.Services.DTOs.Car
+@inject HttpClient Http
+
+<h1 style="font-weight:900; letter-spacing:-1px; margin-bottom:30px;">ACTIVE LISTINGS</h1>
+
+@if (_cars == null)
+{
+    <div class="heavy-card" style="padding:40px; justify-content:center;">LOADING...</div>
+}
+else
+{
+    @foreach (var car in _cars)
+    {
+        <div class="heavy-card">
+            <div class="card-left">
+                <span style="font-size:0.7rem; border:1px solid black; padding:2px 5px;">@car.Status.ToUpper()</span>
+                <h2 style="margin:10px 0; font-weight:800;">@car.Brand @car.Model</h2>
+                <p style="color:#666; margin:0;">@car.Year • @car.EngineDisplacement L • @car.Color</p>
+            </div>
+            <div class="card-right">
+                <div style="font-size:0.7rem; color:#888;">PRICE</div>
+                <div style="font-size:1.6rem; font-weight:900; margin-bottom:15px;">$@car.Price.ToString("N0")</div>
+                <a href="car/@car.Id" class="btn-solid" style="width:100%;">View</a>
+            </div>
+        </div>
+    }
+}
+
+@code {
+    private List<CarDto>? _cars;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try {
+            _cars = await Http.GetFromJsonAsync<List<CarDto>>("cars");
+        } catch {
+            _cars = new();
+        }
+    }
+}

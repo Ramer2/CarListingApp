@@ -1,0 +1,36 @@
+﻿@using Microsoft.AspNetCore.Components.Authorization
+<CascadingAuthenticationState>
+    <Router AppAssembly="@typeof(App).Assembly">
+        <Found Context="routeData">
+            <AuthorizeRouteView RouteData="@routeData" DefaultLayout="@typeof(MainLayout)">
+                <NotAuthorized>
+                    @if (context.User.Identity?.IsAuthenticated != true)
+                    {
+                        <div class="container mt-5">
+                            <div class="alert alert-warning">
+                                <h5>Access Denied</h5>
+                                <p>You need to be logged in to see this page. <a href="login">Login here</a></p>
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="container mt-5">
+                            <div class="alert alert-danger">
+                                <h5>Forbidden</h5>
+                                <p>You do not have the required permissions (Role) to view this resource.</p>
+                            </div>
+                        </div>
+                    }
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="@routeData" Selector="h1" />
+        </Found>
+        <NotFound>
+            <PageTitle>Not found</PageTitle>
+            <LayoutView Layout="@typeof(MainLayout)">
+                <p role="alert">Sorry, there's nothing at this address.</p>
+            </LayoutView>
+        </NotFound>
+    </Router>
+</CascadingAuthenticationState>
