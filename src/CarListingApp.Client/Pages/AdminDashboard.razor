@@ -1,62 +1,254 @@
 ﻿@page "/admin/dashboard"
 @attribute [Authorize(Roles = "Admin")]
 @using CarListingApp.Services.DTOs.User
+@using CarListingApp.Services.DTOs.Car
 @using Microsoft.AspNetCore.Authorization
 @inject HttpClient Http
+@inject NavigationManager Nav
 
-<h3 class="mb-4">User Management</h3>
+<div class="container-terminal">
+    @* HEADER SECTION *@
+    <div class="d-flex justify-content-between align-items-end mb-4">
+        <div>
+            <h1 class="fw-900 m-0">CENTRAL_ADMIN_TERMINAL</h1>
+            <div class="system-clock">NODE_STATUS: ONLINE // ACCESS: ROOT_ADMIN</div>
+        </div>
+        @if (!string.IsNullOrEmpty(_statusMessage))
+        {
+            <div class="status-banner @(_isError ? "fault" : "success")">
+                [@(_isError ? "FAULT" : "SYNC")]: @_statusMessage.ToUpper()
+            </div>
+        }
+    </div>
 
-<div class="card shadow-sm">
-    <div class="table-responsive">
-        <table class="table table-hover mb-0">
-            <thead class="table-light">
-            <tr>
-                <th>ID</th>
-                <th>Username</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Status</th>
-            </tr>
-            </thead>
-            <tbody>
-            @if (_users == null)
+    @* --- SECTION 1: USER MANAGEMENT --- *@
+    <div class="section-label">01_USER_DATABASE_MANAGEMENT</div>
+    <div class="heavy-card mb-5" style="flex-direction: column; background: white;">
+        <div class="db-header">
+            <div class="col-id">ID</div>
+            <div class="col-main">IDENTIFIER_&_EMAIL</div>
+            <div class="col-role">ROLE</div>
+            <div class="col-status">ACCOUNT_STATUS</div>
+            <div class="col-action">COMMAND</div>
+        </div>
+
+        @if (_users == null)
+        {
+            <div class="loading-row">RETRIEVING_USER_NODES...</div>
+        }
+        else
+        {
+            @foreach (var user in _users)
             {
-                <tr><td colspan="5" class="text-center">Loading users...</td></tr>
+                <div class="db-row">
+                    <div class="col-id">#@user.Id.ToString("D3")</div>
+                    <div class="col-main">
+                        <span class="u-name">@user.Username</span>
+                        <span class="u-email">@user.Email</span>
+                    </div>
+                    <div class="col-role">
+                        <span class="role-tag @user.Role.ToLower()">@user.Role.ToUpper()</span>
+                    </div>
+                    <div class="col-status">
+                        @if (user.IsBlocked)
+                        {
+                            <span class="status-dot blocked"></span> <span class="txt-red">BLOCKED</span>
+                        }
+                        else
+                        {
+                            <span class="status-dot active"></span> <span class="txt-green">ACTIVE</span>
+                        }
+                    </div>
+                    <div class="col-action">
+                        <button class="btn-terminal" @onclick="() => OpenEditModal(user)">MANAGE</button>
+                    </div>
+                </div>
             }
-            else
+        }
+    </div>
+
+    @* --- SECTION 2: CAR INVENTORY LIST --- *@
+    <div class="section-label">02_FLEET_INVENTORY_LOG</div>
+    <div class="heavy-card" style="flex-direction: column; background: white;">
+        <div class="db-header header-magenta">
+            <div class="col-id">ID</div>
+            <div class="col-main">VEHICLE_DESCRIPTION</div>
+            <div class="col-price">PRICE</div>
+            <div class="col-status">STATUS</div>
+            <div class="col-action">LINK</div>
+        </div>
+
+        @if (_cars == null)
+        {
+            <div class="loading-row">SCANNING_FLEET_RECORDS...</div>
+        }
+        else
+        {
+            @foreach (var car in _cars)
             {
-                @foreach (var user in _users)
-                {
-                    <tr>
-                        <td>@user.Id</td>
-                        <td>@user.Username</td>
-                        <td>@user.Email</td>
-                        <td><span class="badge bg-secondary">@user.Role</span></td>
-                        <td>
-                            @if (user.IsBlocked)
-                            {
-                                <span class="badge bg-danger">Blocked</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-success">Active</span>
-                            }
-                        </td>
-                    </tr>
-                }
+                <div class="db-row car-hover">
+                    <div class="col-id">#@car.Id.ToString("D4")</div>
+                    <div class="col-main">
+                        <span class="u-name">@car.Brand @car.Model</span>
+                        <span class="u-email">YEAR: @car.Year // OWNER_ID: @car.SellerId</span>
+                    </div>
+                    <div class="col-price fw-900">$@car.Price.ToString("N0")</div>
+                    <div class="col-status">
+                        <span class="status-tag-mini @car.Status.ToLower()">@car.Status.ToUpper()</span>
+                    </div>
+                    <div class="col-action">
+                        <button class="btn-terminal" @onclick='() => Nav.NavigateTo($"/car/{car.Id}")'>OPEN_LOG</button>
+                    </div>
+                </div>
             }
-            </tbody>
-        </table>
+        }
     </div>
 </div>
 
+@* USER EDIT MODAL *@
+@if (_selectedUser != null)
+{
+    <div class="modal-overlay">
+        <div class="heavy-card modal-box" style="flex-direction: column; background: white; width: 500px;">
+            <div class="modal-header-black">USER_MODIFICATION_PROTOCOL: #@_selectedUser.Id</div>
+            <div class="modal-body-industrial">
+                <div class="input-group mb-3">
+                    <label class="industrial-label">CORE_USERNAME</label>
+                    <input type="text" @bind="_selectedUser.Username" class="custom-input" />
+                </div>
+                <div class="input-group mb-3">
+                    <label class="industrial-label">EMAIL_ADDRESS</label>
+                    <input type="text" @bind="_selectedUser.Email" class="custom-input" />
+                </div>
+                <div class="row d-flex mb-3">
+                    <div class="col-6">
+                        <label class="industrial-label">ASSIGNED_ROLE</label>
+                        <select @bind="_selectedUser.Role" class="custom-input">
+                            <option value="User">USER</option>
+                            <option value="Dealer">DEALER</option>
+                            <option value="Admin">ADMIN</option>
+                        </select>
+                    </div>
+                    <div class="col-6">
+                        <label class="industrial-label">ACCOUNT_STATUS</label>
+                        <div class="d-flex align-items-center gap-2 mt-2">
+                            <input type="checkbox" @bind="_selectedUser.IsBlocked" id="blockCheck" />
+                            <label for="blockCheck" style="margin:0; font-weight:900; font-size:0.7rem;">BLOCK_USER</label>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer-industrial">
+                    <button class="btn-black" @onclick="SaveUserChanges">SAVE_CHANGES</button>
+                    <button class="btn-industrial" @onclick="() => _selectedUser = null">ABORT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
+<style>
+    .container-terminal { max-width: 1200px; margin: 3rem auto; padding: 0 20px; }
+    .section-label { font-weight: 900; font-size: 0.8rem; color: #888; margin-bottom: 10px; letter-spacing: 2px; }
+    .system-clock { font-family: monospace; font-size: 0.7rem; color: #aaa; }
+    
+    /* TABLE STYLING */
+    .db-header { display: flex; background: black; color: white; padding: 15px; font-weight: 900; font-size: 0.7rem; letter-spacing: 1px; }
+    .header-magenta { background: #ff00ff; color: black; }
+    .db-row { display: flex; padding: 15px; border-bottom: 1px solid #eee; align-items: center; transition: 0.1s; }
+    .db-row:hover { background: #fafafa; }
+    .car-hover:hover { border-left: 5px solid #ff00ff; }
+
+    .col-id { width: 80px; font-family: monospace; font-weight: 900; }
+    .col-main { flex: 2; display: flex; flex-direction: column; }
+    .col-role, .col-status, .col-price { flex: 1; }
+    .col-action { width: 140px; text-align: right; }
+
+    .u-name { font-weight: 900; font-size: 0.95rem; text-transform: uppercase; }
+    .u-email { font-size: 0.7rem; color: #888; font-family: monospace; }
+
+    .role-tag { padding: 3px 8px; font-size: 0.6rem; font-weight: 900; border: 1px solid black; }
+    .role-tag.admin { background: black; color: white; }
+    .status-dot { height: 8px; width: 8px; display: inline-block; border-radius: 50%; margin-right: 5px; }
+    .active { background: #00ff00; }
+    .blocked { background: #ff0055; }
+    .txt-red { color: #ff0055; }
+    .txt-green { color: #00ff00; }
+
+    .status-tag-mini { font-size: 0.6rem; padding: 2px 6px; font-weight: 900; border: 1px solid black; }
+    .status-tag-mini.active { background: #00ff00; }
+    .status-tag-mini.sold { background: black; color: white; }
+
+    /* BUTTONS */
+    .btn-terminal { background: white; border: 2px solid black; padding: 6px 12px; font-size: 0.65rem; font-weight: 900; cursor: pointer; }
+    .btn-terminal:hover { background: black; color: white; }
+
+    /* MODAL */
+    .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; }
+    .modal-header-black { background: black; color: white; padding: 20px; font-weight: 900; font-size: 0.8rem; }
+    .modal-body-industrial { padding: 30px; }
+    .modal-footer-industrial { display: flex; gap: 15px; margin-top: 25px; padding-top: 20px; border-top: 2px solid black; }
+    .industrial-label { font-size: 0.65rem; font-weight: 900; color: #888; margin-bottom: 5px; display: block; }
+
+    .status-banner { padding: 8px 15px; font-weight: 900; font-size: 0.7rem; border: 2px solid black; }
+    .success { background: #00ff00; color: black; }
+    .fault { background: #ff0055; color: white; }
+    .loading-row { padding: 30px; text-align: center; font-weight: 900; font-size: 0.7rem; color: #ccc; letter-spacing: 2px; }
+</style>
+
 @code {
     private List<UserDto>? _users;
+    private List<CarDto>? _cars;
+    private UserDto? _selectedUser;
+    private string? _statusMessage;
+    private bool _isError = false;
 
     protected override async Task OnInitializedAsync()
     {
-        try {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        try 
+        {
             _users = await Http.GetFromJsonAsync<List<UserDto>>("users");
-        } catch { /* Handle unauthorized or error */ }
+            _cars = await Http.GetFromJsonAsync<List<CarDto>>("cars");
+        } 
+        catch { _statusMessage = "SYNC_FAILED_UNAUTHORIZED"; _isError = true; }
+    }
+
+    private void OpenEditModal(UserDto user)
+    {
+        _selectedUser = new UserDto {
+            Id = user.Id,
+            Username = user.Username,
+            Email = user.Email,
+            Role = user.Role,
+            IsBlocked = user.IsBlocked
+        };
+    }
+
+    private async Task SaveUserChanges()
+    {
+        if (_selectedUser == null) return;
+        try 
+        {
+            var update = new { 
+                _selectedUser.Email, 
+                _selectedUser.Username, 
+                _selectedUser.IsBlocked, 
+                RoleName = _selectedUser.Role 
+            };
+            var res = await Http.PutAsJsonAsync($"users/{_selectedUser.Id}", update);
+            if (res.IsSuccessStatusCode)
+            {
+                _statusMessage = "USER_NODE_UPDATED";
+                _isError = false;
+                _selectedUser = null;
+                await LoadData();
+            }
+            else { _statusMessage = "UPDATE_REJECTED"; _isError = true; }
+        }
+        catch { _statusMessage = "CONNECTION_FAULT"; _isError = true; }
     }
 }

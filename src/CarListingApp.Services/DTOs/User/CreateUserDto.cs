@@ -12,9 +12,8 @@ public class CreateUserDto
     [RegularExpression(@"[^@ \t\r\n]+@[^@ \t\r\n]+\.[^@ \t\r\n]+")]
     public string Email { get; set; } = null!;
 
-    [Required]
     [RegularExpression(@"^(?=.*?[A-Z])(?=.*?[a-z])(?=.*?[0-9])(?=.*?[#?!@$ %^&*-]).{8,}$")]
-    public string Password { get; set; } = null!;
+    public string? Password { get; set; } = null!;
 
     [Required]
     public string RoleName { get; set; } = null!;

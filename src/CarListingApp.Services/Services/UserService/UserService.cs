@@ -161,10 +161,13 @@ public class UserService : IUserService
 
     public async Task<UserDto> CreateUser(CreateUserDto createUserDto, CancellationToken cancellationToken)
     {
+        if (string.IsNullOrEmpty(createUserDto.Password))
+            throw new ArgumentException("Password must be valid.");
+        
         var emailCheck = await _context.Users.FirstOrDefaultAsync(u => u.Email.Equals(createUserDto.Email), cancellationToken);
         if (emailCheck != null)
             throw new ArgumentException("An account with this email already exists.");
-
+        
         var usernameCheck = await _context.Users.FirstOrDefaultAsync(u => u.Username.Equals(createUserDto.Username), cancellationToken);
         if (usernameCheck != null)
             throw new ArgumentException("This username is already taken.");
@@ -238,7 +241,9 @@ public class UserService : IUserService
         
         user.Email = updateUserDto.Email;
         user.Username = updateUserDto.Username;
-        user.PasswordHash = _passwordHasher.HashPassword(user, updateUserDto.Password);
+        if (updateUserDto.Password != null)
+            user.PasswordHash = _passwordHasher.HashPassword(user, updateUserDto.Password);
+        
         user.RoleNavigation = role;
         if (user.IsBlocked != updateUserDto.IsBlocked) user.IsBlocked = updateUserDto.IsBlocked;
 

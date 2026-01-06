@@ -2,20 +2,29 @@
 @using CarListingApp.Services.DTOs.Car
 @inject HttpClient Http
 
-<h1 style="font-weight:900; letter-spacing:-1px; margin-bottom:30px;">ACTIVE LISTINGS</h1>
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h1 style="font-weight:900; letter-spacing:-1px; margin:0;">FLEET_INVENTORY</h1>
+    
+    @* INDUSTRIAL FILTER TOGGLE *@
+    <div class="filter-controls">
+        <span class="filter-label">DISPLAY_MODE:</span>
+        <button class="btn-filter @(_showOnlyActive ? "active" : "")" @onclick="() => SetFilter(true)">ACTIVE_ONLY</button>
+        <button class="btn-filter @(!_showOnlyActive ? "active" : "")" @onclick="() => SetFilter(false)">ALL_RECORDS</button>
+    </div>
+</div>
 
 <div class="inventory-grid">
     @if (_cars == null)
     {
         <div class="loading-box">SYNCHRONIZING_INVENTORY...</div>
     }
-    else if (!_cars.Any())
+    else if (!FilteredCars.Any())
     {
-        <div class="loading-box">NO_VEHICLES_FOUND_IN_DATABASE.</div>
+        <div class="loading-box">NO_VEHICLES_MATCH_CURRENT_FILTER.</div>
     }
     else
     {
-        @foreach (var car in _cars)
+        @foreach (var car in FilteredCars)
         {
             <div class="heavy-card" style="margin-bottom: 15px; background: white;">
                 <div style="padding: 20px; flex: 1; border-right: 2px solid black;">
@@ -24,18 +33,60 @@
                     <span class="status-badge" style="background: @(car.Status == "Active" ? "#00ff00" : "magenta"); color: @(car.Status == "Active" ? "black" : "white");">
                         @car.Status.ToUpper()
                     </span>
+                    <div style="font-size: 0.7rem; margin-top: 5px; color: #444;">YEAR: @car.Year // @car.EnginePower HP</div>
                 </div>
                 <div style="width: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fafafa;">
                     <div style="font-weight: 900; font-size: 1.2rem;">$@car.Price.ToString("N0")</div>
-                    <a href="/car/@car.Id" style="font-size: 0.7rem; color: black; font-weight: bold; margin-top: 10px;">VIEW_DETAILS</a>
+                    <a href="/car/@car.Id" class="view-link">VIEW_DETAILS</a>
                 </div>
             </div>
         }
     }
 </div>
 
+<style>
+    .filter-controls { display: flex; align-items: center; gap: 10px; border: 2px solid black; padding: 5px; }
+    .filter-label { font-size: 0.65rem; font-weight: 900; padding: 0 10px; }
+    
+    .btn-filter {
+        border: none;
+        background: white;
+        font-size: 0.65rem;
+        font-weight: 900;
+        padding: 8px 15px;
+        cursor: pointer;
+        transition: 0.2s;
+    }
+    
+    .btn-filter.active { background: black; color: white; }
+    .btn-filter:hover:not(.active) { background: #eee; }
+
+    .status-badge {
+        display: inline-block;
+        padding: 2px 8px;
+        font-size: 0.6rem;
+        font-weight: 900;
+        margin-top: 5px;
+    }
+
+    .view-link {
+        font-size: 0.7rem;
+        color: black;
+        font-weight: bold;
+        margin-top: 10px;
+        text-decoration: none;
+        border-bottom: 2px solid black;
+    }
+
+    .view-link:hover { color: magenta; border-color: magenta; }
+</style>
+
 @code {
     private List<CarDto>? _cars;
+    private bool _showOnlyActive = true; // Default to filtering out sold cars
+
+    private IEnumerable<CarDto> FilteredCars => _cars?
+        .Where(c => !_showOnlyActive || c.Status == "Active") ?? Enumerable.Empty<CarDto>();
 
     protected override async Task OnInitializedAsync()
     {
@@ -44,5 +95,10 @@
         } catch {
             _cars = new();
         }
+    }
+
+    private void SetFilter(bool onlyActive)
+    {
+        _showOnlyActive = onlyActive;
     }
 }
