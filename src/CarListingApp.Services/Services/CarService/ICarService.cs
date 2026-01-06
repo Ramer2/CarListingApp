@@ -9,4 +9,8 @@ public interface ICarService
     public Task<CarDto> GetById(int? id, CancellationToken cancellationToken);
     
     public Task<CarDto> CreateCar(CreateCarDto createCarDto, string sellerEmail, CancellationToken cancellationToken);
+    
+    public Task<CarDto> UpdateCar(CreateCarDto createCarDto, int id, string sellerEmail, CancellationToken cancellationToken);
+
+    public Task DeleteCar(int id, string requesterEmail, bool isAdmin, CancellationToken cancellationToken);
 }

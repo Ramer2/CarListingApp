@@ -31,7 +31,7 @@ public class CreateCarDto
     [Range(0, double.MaxValue)]
     public int? Mileage { get; set; }
 
-    public int SellerId { get; set; } = -1;
+    public int? SellerId { get; set; }
 
     public string? Description { get; set; }
 }

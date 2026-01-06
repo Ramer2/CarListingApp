@@ -72,7 +72,7 @@ public class CarController : ControllerBase
             {
                 var email = User.FindFirst(ClaimTypes.Email)?.Value;
                 if (email == null)
-                    return Results.Problem("Invalid credentials. No email provided.");
+                    return Results.Unauthorized();
                 
                 return Results.Ok(await _carService.CreateCar(createCarDto, email, cancellationToken));
             }
@@ -84,6 +84,80 @@ public class CarController : ControllerBase
         catch (ArgumentException ex)
         {
             return Results.BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(ex.Message);
+        }
+    }
+    
+    [Authorize(Roles = "Admin, User, Dealer")]
+    [HttpPut("{id}")]
+    public async Task<IResult> UpdateCar([FromBody] CreateCarDto createCarDto, int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            if (User.IsInRole("Admin"))
+            {
+                if (createCarDto.SellerId == null)
+                    return Results.BadRequest("Insufficient seller details. No id provided.");
+                
+                var seller = await _userService.GetUserById(createCarDto.SellerId, cancellationToken);
+                if (seller == null)
+                    return Results.NotFound("No seller found for the given id.");
+                
+                return Results.Ok(await _carService.UpdateCar(createCarDto, id, seller.Email, cancellationToken));
+            }
+            else
+            {
+                var email = User.FindFirst(ClaimTypes.Email)?.Value;
+                if (email == null)
+                    return Results.Unauthorized();
+                
+                return Results.Ok(await _carService.UpdateCar(createCarDto, id, email, cancellationToken));
+            }
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Results.NotFound(ex.Message);
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(ex.Message);
+        }
+    }
+    
+    [Authorize(Roles = "Admin, User, Dealer")]
+    [HttpDelete("{id}")]
+    public async Task<IResult> DeleteCar(int id, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var isAdmin = User.IsInRole("Admin");
+
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (!isAdmin && email == null)
+                return Results.Unauthorized();
+
+            await _carService.DeleteCar(
+                id,
+                email,
+                isAdmin,
+                cancellationToken);
+
+            return Results.NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Results.NotFound(ex.Message);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Results.Forbid();
         }
         catch (Exception ex)
         {
