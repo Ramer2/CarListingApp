@@ -1,0 +1,71 @@
+﻿using System.Security.Claims;
+using CarListingApp.Services.Services.Favorite;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+
+namespace CarListingApp.API.Controllers;
+
+[ApiController]
+public class FavoritesController : ControllerBase
+{
+    private readonly IFavoritesService _favoritesService;
+
+    public FavoritesController(IFavoritesService favoritesService)
+    {
+        _favoritesService = favoritesService;
+    }
+
+    [Authorize(Roles = "Admin, User, Dealer")]
+    [HttpPost("favorites")]
+    public async Task<IResult> AddToFavorites([FromBody] int carId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (email == null)
+                return Results.Unauthorized();
+
+            await _favoritesService.AddToFavorites(carId, email, cancellationToken);
+            return Results.Created();
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Results.NotFound(ex.Message);
+        }
+    }
+    
+    [Authorize(Roles = "Admin, User, Dealer")]
+    [HttpDelete("favorites/{carId}")]
+    public async Task<IResult> RemoveFromFavorites(int carId, CancellationToken cancellationToken)
+    {
+        try
+        {
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (email == null)
+                return Results.Unauthorized();
+
+            await _favoritesService.RemoveFromFavorites(carId, email, cancellationToken);
+            return Results.NoContent();
+        }
+        catch (KeyNotFoundException ex)
+        {
+            return Results.NotFound(ex.Message);
+        }
+    }
+
+    [Authorize(Roles = "Admin, User, Dealer")]
+    [HttpGet("favorites")]
+    public async Task<IResult> GetFavorites(CancellationToken cancellationToken)
+    {
+        var email = User.FindFirst(ClaimTypes.Email)?.Value;
+        if (email == null)
+            return Results.Unauthorized();
+
+        return Results.Ok(
+            await _favoritesService.GetFavorites(email, cancellationToken));
+    }
+}
