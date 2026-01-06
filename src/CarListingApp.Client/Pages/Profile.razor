@@ -69,7 +69,7 @@ else
             var user = authState.User;
 
             // 1. Rename to userEmail to avoid naming conflicts
-            var userEmail = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value ?? user.FindFirst("emailaddress")?.Value;;
+            var userEmail = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value ?? user.FindFirst("emailaddress")?.Value;
 
             if (string.IsNullOrEmpty(userEmail))
             {

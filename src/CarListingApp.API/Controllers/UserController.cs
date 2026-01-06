@@ -72,7 +72,7 @@ public class UserController : ControllerBase
         }
     }
     
-    [Authorize(Roles = "Admin, User, Dealer")]
+    [Authorize(Roles = "Admin,User,Dealer")]
     [HttpGet("by-email/{email}")]
     public async Task<IResult> GetUserByEmail(string email, CancellationToken cancellationToken)
     {
@@ -84,12 +84,9 @@ public class UserController : ControllerBase
             }
             else
             {
-                var tokenEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+                var tokenEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("email")?.Value ?? User.FindFirst("emailaddress")?.Value;
                 if (tokenEmail == null)
                     return Results.Problem("Invalid credentials.");
-
-                if (!tokenEmail.Equals(email, StringComparison.OrdinalIgnoreCase))
-                    return Results.Forbid();
 
                 return Results.Ok(await _userService.GetUserByEmail(tokenEmail, cancellationToken));
             }

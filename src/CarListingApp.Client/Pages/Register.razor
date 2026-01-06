@@ -1,0 +1,128 @@
+﻿@page "/register"
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<div style="max-width: 500px; margin: 0 auto;">
+    <div class="heavy-card" style="flex-direction: column;">
+        <div class="card-content" style="border-right: none; border-bottom: var(--border-weight) solid var(--black);">
+            <h2 style="font-weight: 900; text-transform: uppercase; margin-bottom: 1.5rem;">Create Account</h2>
+            
+            @if (!string.IsNullOrEmpty(error))
+            {
+                <div style="color: red; border: 2px solid red; padding: 10px; margin-bottom: 1rem; font-size: 0.75rem; font-weight: bold;">
+                    REGISTRATION_ERROR: @error.ToUpper()
+                </div>
+            }
+
+            @* ROLE SELECTION *@
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-weight: bold; font-size: 0.7rem; margin-bottom: 8px;">ACCOUNT TYPE</label>
+                <div style="display: flex; gap: 20px;">
+                    <label class="radio-container">
+                        <input type="radio" name="role" value="User" checked="@(regModel.RoleName == "User")" @onchange="@(() => regModel.RoleName = "User")" />
+                        <span class="custom-radio"></span> INDIVIDUAL
+                    </label>
+                    <label class="radio-container">
+                        <input type="radio" name="role" value="Dealer" checked="@(regModel.RoleName == "Dealer")" @onchange="@(() => regModel.RoleName = "Dealer")" />
+                        <span class="custom-radio"></span> DEALER
+                    </label>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-weight: bold; font-size: 0.7rem; margin-bottom: 5px;">USERNAME</label>
+                <input @bind="regModel.Username" class="custom-input" placeholder="User123..." />
+            </div>
+
+            <div style="margin-bottom: 1rem;">
+                <label style="display: block; font-weight: bold; font-size: 0.7rem; margin-bottom: 5px;">EMAIL ADDRESS</label>
+                <input @bind="regModel.Email" type="email" class="custom-input" placeholder="name@example.com" />
+            </div>
+
+            <div style="margin-bottom: 1.5rem;">
+                <label style="display: block; font-weight: bold; font-size: 0.7rem; margin-bottom: 5px;">PASSWORD</label>
+                <input @bind="regModel.Password" type="password" class="custom-input" placeholder="********" />
+            </div>
+
+            <button @onclick="HandleRegister" class="btn-black">Register User</button>
+        </div>
+        <div class="card-action" style="background: #f9f9f9; width: 100%; padding: 1rem;">
+            <p style="font-size: 0.7rem; margin: 0;">Already have an account? <a href="login" style="color: black; font-weight: bold;">Sign In</a></p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .custom-input {
+        width: 100%;
+        padding: 12px;
+        border: var(--border-weight) solid var(--black);
+        font-family: inherit;
+        outline: none;
+    }
+
+    /* Industrial Radio Styling */
+    .radio-container {
+        display: flex;
+        align-items: center;
+        cursor: pointer;
+        font-size: 0.8rem;
+        font-weight: 800;
+        user-select: none;
+    }
+
+    .radio-container input {
+        position: absolute;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .custom-radio {
+        height: 18px;
+        width: 18px;
+        background-color: #fff;
+        border: 2px solid black;
+        margin-right: 8px;
+        display: inline-block;
+        position: relative;
+    }
+
+    .radio-container input:checked ~ .custom-radio {
+        background-color: magenta;
+    }
+
+    .radio-container input:checked ~ .custom-radio:after {
+        content: "";
+        position: absolute;
+        left: 4px;
+        top: 4px;
+        width: 6px;
+        height: 6px;
+        background: white;
+    }
+</style>
+
+@code {
+    private RegisterDto regModel = new() { RoleName = "User" };
+    private string? error;
+
+    private async Task HandleRegister()
+    {
+        var response = await Http.PostAsJsonAsync("users", regModel);
+        if (response.IsSuccessStatusCode)
+        {
+            Nav.NavigateTo("/login");
+        }
+        else
+        {
+            error = await response.Content.ReadAsStringAsync();
+        }
+    }
+
+    public class RegisterDto {
+        public string Username { get; set; } = "";
+        public string Email { get; set; } = "";
+        public string Password { get; set; } = "";
+        public string RoleName { get; set; } = "";
+    }
+}

@@ -1,41 +1,54 @@
 ﻿@using Microsoft.AspNetCore.Components.Authorization
+@inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
+@inject Blazored.LocalStorage.ILocalStorageService LocalStorage
 
-<div class="navbar-content d-flex justify-content-between align-items-center px-4">
-    <a class="brand" href="/">
-        <i class="bi bi-car-front-fill"></i> CAR MARKET
+<div class="nav-container">
+    <a href="/" class="brand" style="font-weight: 900; font-size: 1.5rem; text-decoration: none; color: black;">
+        CAR_MARKET<span style="color: magenta;">_</span>
     </a>
 
-    <div class="nav-links">
-        <NavLink href="" Match="NavLinkMatch.All" class="nav-item">Browse</NavLink>
-        
+    <div class="nav-links" style="display: flex; align-items: center;">
+        <NavLink href="" Match="NavLinkMatch.All">Inventory</NavLink>
+
         <AuthorizeView>
             <Authorized>
-                <NavLink href="car/create" class="nav-item">Add Listing</NavLink>
-                <NavLink href="account" class="nav-item fw-bold text-primary">
-                    @context.User.Identity?.Name's Account
-                </NavLink>
+                <NavLink href="car/create">Add_Car</NavLink>
+                <NavLink href="account">Profile</NavLink>
+                <button @onclick="Logout" class="btn-logout">LOGOUT</button>
             </Authorized>
             <NotAuthorized>
-                <a href="login" class="btn btn-dark btn-sm">Sign In</a>
+                <NavLink href="login">Sign_In</NavLink>
+                <NavLink href="register" class="btn-nav-accent">Sign_Up</NavLink>
             </NotAuthorized>
         </AuthorizeView>
     </div>
 </div>
 
 <style>
-    .brand {
-        font-size: 1.5rem;
+    .btn-logout {
+        background: none;
+        border: 2px solid black;
         font-weight: 800;
-        color: #222;
-        text-decoration: none;
-        letter-spacing: -1px;
-    }
-    .nav-item {
+        font-size: 0.75rem;
+        padding: 5px 15px;
         margin-left: 20px;
-        text-decoration: none;
-        color: #555;
-        font-size: 0.95rem;
+        cursor: pointer;
     }
-    .nav-item:hover { color: #000; }
-    .active { border-bottom: 2px solid #000; padding-bottom: 5px; }
+    .btn-logout:hover { background: black; color: white; }
+
+    .btn-nav-accent {
+        background: black;
+        color: white !important;
+        padding: 5px 15px !important;
+    }
 </style>
+
+@code {
+private async Task Logout()
+{
+await LocalStorage.RemoveItemAsync("authToken");
+((CarListingApp.Client.Auth.CustomAuthStateProvider)AuthStateProvider).NotifyUserLogout();
+Nav.NavigateTo("/", forceLoad: true);
+}
+}
