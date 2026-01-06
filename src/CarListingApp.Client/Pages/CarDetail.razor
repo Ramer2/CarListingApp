@@ -6,54 +6,89 @@
 @inject HttpClient Http
 @inject NavigationManager Nav
 @inject AuthenticationStateProvider AuthStateProvider
+@inject IJSRuntime Js
 
-<div class="details-wrapper">
+<div class="details-container">
     @if (_car == null)
     {
-        <div class="loading-box">INITIALIZING SYSTEM DATA...</div>
+        <div class="loading-terminal">
+            <div class="spinner-border"></div>
+            <span>ACCESSING_DATABASE_RECORDS...</span>
+        </div>
     }
     else
     {
-        <div class="heavy-card">
-            <div class="card-left-visual">
-                <i class="bi bi-car-front-fill"></i>
-                <div class="status-overlay">@_car.Status.ToUpper()</div>
+        @* SYSTEM NOTIFICATIONS *@
+        @if (!string.IsNullOrEmpty(_systemFeedback))
+        {
+            <div class="system-status-bar @(_isError ? "status-fault" : "status-ok")">
+                <span class="status-tag">@(_isError ? "FAULT" : "OK")</span> @_systemFeedback.ToUpper()
+            </div>
+        }
+
+        <div class="industrial-card-layout">
+            @* LEFT VISUAL COLUMN *@
+            <div class="visual-sidebar">
+                <div class="status-badge">@_car.Status.ToUpper()</div>
+                <div class="sidebar-icon">
+                    <i class="bi bi-car-front"></i>
+                </div>
+                <div class="vin-tag">SERIAL_NO: @(_car.Vin ?? "XXXX-XXXX")</div>
             </div>
 
-            <div class="card-right-info">
-                <div class="d-flex justify-content-between align-items-start">
-                    <div>
-                        <h1 class="text-uppercase fw-900">@_car.Brand @_car.Model</h1>
-                        <p class="specs-sub">YEAR: @_car.Year // VIN: @(_car.Vin ?? "N/A")</p>
+            @* RIGHT INFO COLUMN *@
+            <div class="content-body">
+                <div class="header-section">
+                    <div class="title-area">
+                        <h1 class="brand-model">@_car.Brand.ToUpper() @_car.Model.ToUpper()</h1>
+                        <span class="year-stamp">MODEL_YEAR: @_car.Year</span>
                     </div>
-                    <div class="price-tag">$@_car.Price.ToString("N0")</div>
+                    <div class="price-display">
+                        <span class="currency">$</span>@_car.Price.ToString("N0")
+                    </div>
                 </div>
 
-                <div class="info-grid">
-                    <div class="info-item"><strong>ENGINE:</strong> @_car.EngineDisplacement L</div>
-                    <div class="info-item"><strong>POWER:</strong> @_car.EnginePower HP</div>
-                    <div class="info-item"><strong>MILEAGE:</strong> @(_car.Mileage?.ToString("N0") ?? "0") KM</div>
-                    <div class="info-item"><strong>COLOR:</strong> @_car.Color?.ToUpper()</div>
+                <div class="specs-grid">
+                    <div class="spec-tile">
+                        <label>ENGINE_DISP</label>
+                        <div class="value">@_car.EngineDisplacement L</div>
+                    </div>
+                    <div class="spec-tile">
+                        <label>POWER_OUTPUT</label>
+                        <div class="value">@_car.EnginePower HP</div>
+                    </div>
+                    <div class="spec-tile">
+                        <label>MILEAGE_LOG</label>
+                        <div class="value">@(_car.Mileage?.ToString("N0") ?? "0") KM</div>
+                    </div>
+                    <div class="spec-tile">
+                        <label>COLOR_CODE</label>
+                        <div class="value">@_car.Color?.ToUpper()</div>
+                    </div>
                 </div>
 
-                <div class="description-box">
-                    <strong>DESCRIPTION:</strong><br />
-                    <p>@(string.IsNullOrEmpty(_car.Description) ? "NO DATA PROVIDED." : _car.Description)</p>
+                <div class="desc-container">
+                    <label class="desc-label">TECHNICAL_DESCRIPTION_LOG</label>
+                    <p class="desc-text">
+                        @(string.IsNullOrEmpty(_car.Description) ? "NO SUPPLEMENTARY DATA PROVIDED BY OPERATOR." : _car.Description)
+                    </p>
                 </div>
 
                 <AuthorizeView>
                     <Authorized>
                         @if (IsOwnerOrAdmin(context.User))
                         {
-                            <div class="admin-panel">
-                                <h5 class="panel-title">SELLER CONTROLS</h5>
-                                <div class="action-buttons">
-                                    <button class="btn-industrial btn-warn" @onclick="GoToEdit">EDIT</button>
+                            <div class="control-panel">
+                                <div class="panel-header">ADMIN_CONTROLS</div>
+                                <div class="panel-actions">
+                                    <button class="btn-ctrl btn-edit" @onclick="GoToEdit">EDIT_ENTRY</button>
+                                    
                                     @if (_car.Status == "Active")
                                     {
-                                        <button class="btn-industrial btn-success" @onclick="MarkAsSold">MARK SOLD</button>
+                                        <button class="btn-ctrl btn-sold" @onclick='() => RequestConfirmation("MARK THIS VEHICLE AS SOLD?", MarkAsSold)'>MARK_SOLD</button>
                                     }
-                                    <button class="btn-industrial btn-danger" @onclick="DeleteCar">DELETE</button>
+                                    
+                                    <button class="btn-ctrl btn-delete" @onclick='() => RequestConfirmation("PERMANENTLY PURGE THIS LOG?", DeleteCar)'>DELETE_ENTRY</button>
                                 </div>
                             </div>
                         }
@@ -64,150 +99,192 @@
     }
 </div>
 
+@* CUSTOM MODAL SYSTEM *@
+@if (_showConfirmModal)
+{
+    <div class="modal-backdrop">
+        <div class="modal-box">
+            <div class="modal-banner">CRITICAL_CONFIRMATION</div>
+            <div class="modal-body">
+                <p>@_confirmMessage</p>
+                <div class="modal-footer">
+                    <button class="btn-black" @onclick="ExecuteConfirmedAction">PROCEED</button>
+                    <button class="btn-outline" @onclick="() => _showConfirmModal = false">ABORT</button>
+                </div>
+            </div>
+        </div>
+    </div>
+}
+
 <style>
-    .fw-900 { font-weight: 900; letter-spacing: -2px; }
-    
-    /* Magenta Visual Box */
-    .card-left-visual {
-        width: 40%;
-        background: #ff00ff; /* MAGENTA */
-        border-right: 2px solid black;
+    .details-container { max-width: 1100px; margin: 3rem auto; padding: 0 20px; font-family: 'Inter', sans-serif; }
+
+    /* LAYOUT ENGINE */
+    .industrial-card-layout {
+        display: grid;
+        grid-template-columns: 350px 1fr;
+        border: 4px solid var(--industrial-black);
+        background: white;
+        min-height: 600px;
+    }
+
+    /* SIDEBAR */
+    .visual-sidebar {
+        background: var(--industrial-magenta);
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         position: relative;
-        min-height: 400px;
+        padding: 40px;
         color: white;
-        font-size: 5rem;
+        border-right: 4px solid var(--industrial-black);
     }
 
-    .status-overlay {
+    .status-badge {
         position: absolute;
-        top: 20px;
-        left: 20px;
+        top: 0; left: 0;
         background: black;
         color: white;
-        font-size: 0.8rem;
-        padding: 5px 10px;
-        font-weight: bold;
-    }
-
-    .card-right-info { flex: 1; padding: 40px; }
-    
-    .price-tag { font-size: 2.5rem; font-weight: 900; letter-spacing: -1px; }
-    
-    .info-grid {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 15px;
-        margin: 20px 0;
-        border: 2px solid black;
-        padding: 15px;
-        font-size: 0.85rem;
-    }
-
-    .description-box {
-        border-left: 4px solid black;
-        padding-left: 15px;
-        margin-top: 20px;
-    }
-
-    /* INDUSTRIAL BUTTONS */
-    .admin-panel {
-        margin-top: 30px;
-        border: 2px dashed black;
-        padding: 20px;
-    }
-
-    .panel-title { font-size: 0.7rem; font-weight: 900; margin-bottom: 15px; }
-
-    .action-buttons { display: flex; gap: 10px; }
-
-    .btn-industrial {
-        flex: 1;
-        border: 2px solid black;
-        padding: 10px;
+        padding: 8px 15px;
         font-weight: 900;
-        font-size: 0.8rem;
-        cursor: pointer;
-        background: white;
-        transition: 0.2s;
+        font-size: 0.75rem;
     }
 
-    .btn-warn:hover { background: #ffcc00; }
-    .btn-success:hover { background: #00ff00; }
-    .btn-danger:hover { background: #ff0000; color: white; }
+    .sidebar-icon { font-size: 8rem; filter: drop-shadow(5px 5px 0px rgba(0,0,0,0.2)); }
+    .vin-tag { margin-top: 20px; font-size: 0.65rem; font-weight: 900; background: rgba(0,0,0,0.1); padding: 5px 10px; }
+
+    /* CONTENT BODY */
+    .content-body { padding: 50px; display: flex; flex-direction: column; gap: 30px; }
+
+    .header-section {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 20px;
+    }
+
+    .brand-model { font-weight: 900; font-size: 2.5rem; letter-spacing: -2px; line-height: 1; margin: 0; }
+    .year-stamp { font-size: 0.75rem; font-weight: 900; color: #888; }
+    .price-display { font-size: 3rem; font-weight: 900; letter-spacing: -2px; color: var(--industrial-black); }
+    .currency { font-size: 1.5rem; vertical-align: top; margin-right: 5px; }
+
+    /* SPECS GRID */
+    .specs-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 15px;
+    }
+
+    .spec-tile {
+        border: 2px solid var(--industrial-black);
+        padding: 15px;
+    }
+
+    .spec-tile label { display: block; font-size: 0.65rem; font-weight: 900; color: #888; margin-bottom: 5px; }
+    .spec-tile .value { font-weight: 900; font-size: 1.1rem; }
+
+    /* DESCRIPTION */
+    .desc-container { background: #fafafa; padding: 25px; border-left: 5px solid var(--industrial-black); }
+    .desc-label { font-size: 0.7rem; font-weight: 900; margin-bottom: 10px; display: block; }
+    .desc-text { line-height: 1.6; font-size: 0.95rem; margin: 0; }
+
+    /* CONTROLS */
+    .control-panel { margin-top: 20px; border: 2px dashed #ccc; padding: 20px; }
+    .panel-header { font-size: 0.7rem; font-weight: 900; margin-bottom: 15px; color: #aaa; }
+    .panel-actions { display: flex; gap: 10px; }
+
+    .btn-ctrl {
+        flex: 1;
+        padding: 12px;
+        font-weight: 900;
+        font-size: 0.75rem;
+        border: 2px solid var(--industrial-black);
+        background: white;
+        cursor: pointer;
+        transition: all 0.1s;
+    }
+
+    .btn-edit:hover { background: #eee; }
+    .btn-sold:hover { background: var(--industrial-green); }
+    .btn-delete:hover { background: var(--industrial-red); color: white; }
+
+    /* MODAL */
+    .modal-backdrop { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; }
+    .modal-box { background: white; width: 400px; border: 4px solid black; }
+    .modal-banner { background: var(--industrial-red); color: white; padding: 10px; font-weight: 900; font-size: 0.8rem; }
+    .modal-body { padding: 30px; }
+    .modal-footer { display: flex; gap: 10px; margin-top: 20px; }
+
+    /* SYSTEM STATUS */
+    .system-status-bar { padding: 12px; font-weight: 900; font-size: 0.75rem; border: 2px solid black; margin-bottom: 20px; }
+    .status-ok { background: var(--industrial-green); color: black; }
+    .status-fault { background: var(--industrial-red); color: white; }
+    .status-tag { background: rgba(0,0,0,0.2); padding: 2px 5px; margin-right: 10px; }
+
+    .loading-terminal { text-align: center; padding: 100px; font-weight: 900; font-size: 1.2rem; color: #ccc; }
 </style>
 
 @code {
     [Parameter] public int Id { get; set; }
     private CarDto? _car;
     private int? _currentUserId;
+    private string? _systemFeedback;
+    private bool _isError = false;
+
+    // Modal state
+    private bool _showConfirmModal = false;
+    private string _confirmMessage = "";
+    private Func<Task>? _pendingAction;
 
     protected override async Task OnInitializedAsync()
     {
         try {
             _car = await Http.GetFromJsonAsync<CarDto>($"cars/{Id}");
-            
-            // Fetch current user ID to check ownership
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            var email = authState.User.FindFirst(ClaimTypes.Email)?.Value ?? authState.User.FindFirst("email")?.Value ?? authState.User.FindFirst("emailaddress")?.Value;
+            var email = authState.User.FindFirst(ClaimTypes.Email)?.Value ?? authState.User.FindFirst("email")?.Value;
             if (email != null)
             {
-                var userProfile = await Http.GetFromJsonAsync<UserDto>($"users/by-email/" + email);
+                var userProfile = await Http.GetFromJsonAsync<UserDto>($"users/by-email/{Uri.EscapeDataString(email)}");
                 _currentUserId = userProfile?.Id;
             }
-        }
-        catch { Nav.NavigateTo("/"); }
+        } catch { Nav.NavigateTo("/"); }
     }
 
-    private bool IsOwnerOrAdmin(ClaimsPrincipal user)
+    private void RequestConfirmation(string message, Func<Task> action)
     {
-        if (user.IsInRole("Admin")) return true;
-        return _car?.SellerId == _currentUserId;
+        _confirmMessage = message;
+        _pendingAction = action;
+        _showConfirmModal = true;
     }
+
+    private async Task ExecuteConfirmedAction()
+    {
+        _showConfirmModal = false;
+        if (_pendingAction != null) await _pendingAction.Invoke();
+    }
+
+    private bool IsOwnerOrAdmin(ClaimsPrincipal user) => user.IsInRole("Admin") || _car?.SellerId == _currentUserId;
 
     private async Task MarkAsSold()
     {
         if (_car == null) return;
-        // Backend expectation: PUT /cars/{id} updates status
-
-        var update = new CreateCarDto
-        {
-            Price = _car.Price,
-            Brand = _car.Brand,
-            Model = _car.Model,
-            Color = _car.Color,
-            Year = _car.Year,
-            Vin = _car.Vin,
-            EngineDisplacement = _car.EngineDisplacement,
-            EnginePower = _car.EnginePower,
-            Mileage = _car.Mileage,
-            SellerId = _car.SellerId,
-            Description = _car.Description,
-            StatusName = "Sold"
+        var update = new CreateCarDto { 
+            Brand = _car.Brand, Model = _car.Model, Price = _car.Price, Year = _car.Year,
+            SellerId = _car.SellerId, StatusName = "Sold" 
         };
-        
-        await Http.PutAsJsonAsync($"cars/{Id}", update);
-        StateHasChanged();
-        Nav.NavigateTo(Nav.Uri, forceLoad: true);
+        var res = await Http.PutAsJsonAsync($"cars/{Id}", update);
+        if (res.IsSuccessStatusCode) Nav.NavigateTo(Nav.Uri, forceLoad: true);
+        else { _isError = true; _systemFeedback = "CRITICAL_UPDATE_FAILURE"; }
     }
-
-    private void GoToEdit() => Nav.NavigateTo($"/car/edit/{Id}");
 
     private async Task DeleteCar()
     {
-        var response = await Http.DeleteAsync($"cars/{Id}");
-        if (response.IsSuccessStatusCode) Nav.NavigateTo("/");
+        var res = await Http.DeleteAsync($"cars/{Id}");
+        if (res.IsSuccessStatusCode) Nav.NavigateTo("/");
+        else { _isError = true; _systemFeedback = "DELETION_REJECTED_BY_CORE"; }
     }
 
-    private async Task ToggleFavorite()
-    {
-        // Placeholder for future feature
-        Console.WriteLine($"Toggling favorite for car {Id}");
-        /* var response = await Http.PostAsync($"favorites/{Id}", null);
-        if (response.IsSuccessStatusCode) { // update UI }
-        */
-    }
+    private void GoToEdit() => Nav.NavigateTo($"/car/edit/{Id}");
 }

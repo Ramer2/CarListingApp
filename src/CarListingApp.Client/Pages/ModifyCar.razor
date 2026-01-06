@@ -1,0 +1,151 @@
+﻿@page "/car/edit/{Id:int}"
+@using CarListingApp.Services.DTOs.Car
+@using Microsoft.AspNetCore.Authorization
+@inject HttpClient Http
+@inject NavigationManager Nav
+@attribute [Authorize]
+
+<div class="container-70" style="margin-top: 3rem; margin-bottom: 5rem;">
+    <h1 class="fw-900">MODIFY_DATABASE_ENTRY: #@Id</h1>
+
+    @if (_carModel == null)
+    {
+        <div class="loading-box">SYNCHRONIZING_WITH_CORE...</div>
+    }
+    else
+    {
+        <EditForm Model="_carModel" OnValidSubmit="HandleUpdate">
+            <DataAnnotationsValidator />
+
+            <div class="heavy-card" style="flex-direction: column; background: white; padding: 40px; gap: 35px;">
+                
+                @if (!string.IsNullOrEmpty(_statusMessage))
+                {
+                    <div style="border: 2px solid @(_isError ? "#ff0055" : "#00ff00"); padding: 15px; font-weight: 900; font-size: 0.75rem; color: @(_isError ? "#ff0055" : "#00ff00"); background: black; letter-spacing: 1px;">
+                        [@(_isError ? "HARD_FAULT" : "SYSTEM_STATUS")]: @_statusMessage.ToUpper()
+                    </div>
+                }
+
+                @* PRIMARY DATA *@
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div class="input-group">
+                        <label class="industrial-label">BRAND_NAME*</label>
+                        <InputText @bind-Value="_carModel.Brand" class="custom-input" />
+                        <ValidationMessage For="@(() => _carModel.Brand)" class="user-error" />
+                    </div>
+                    <div class="input-group">
+                        <label class="industrial-label">MODEL_DESIGNATION*</label>
+                        <InputText @bind-Value="_carModel.Model" class="custom-input" />
+                        <ValidationMessage For="@(() => _carModel.Model)" class="user-error" />
+                    </div>
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div class="input-group">
+                        <label class="industrial-label">MARKET_PRICE_USD*</label>
+                        <InputNumber @bind-Value="_carModel.Price" class="custom-input" />
+                        <ValidationMessage For="@(() => _carModel.Price)" class="user-error" />
+                    </div>
+                    <div class="input-group">
+                        <label class="industrial-label">MANUFACTURE_YEAR*</label>
+                        <InputNumber @bind-Value="_carModel.Year" class="custom-input" />
+                        <ValidationMessage For="@(() => _carModel.Year)" class="user-error" />
+                    </div>
+                </div>
+
+                @* NEW TECHNICAL ROW: MILEAGE & VIN *@
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                    <div class="input-group">
+                        <label class="industrial-label">MILEAGE_LOG (KM)</label>
+                        <InputNumber @bind-Value="_carModel.Mileage" class="custom-input" placeholder="Current Odometer..." />
+                        <ValidationMessage For="@(() => _carModel.Mileage)" class="user-error" />
+                    </div>
+                    <div class="input-group">
+                        <label class="industrial-label">SERIAL_NUMBER (VIN)</label>
+                        <InputText @bind-Value="_carModel.Vin" class="custom-input" placeholder="17-Digit Identifier..." />
+                        <ValidationMessage For="@(() => _carModel.Vin)" class="user-error" />
+                    </div>
+                </div>
+
+                @* SECONDARY DATA *@
+                <div style="border-top: 1px dashed #ccc; padding-top: 20px;">
+                    <h4 class="fw-900" style="font-size: 0.7rem; color: #aaa; margin-bottom: 25px;">TECHNICAL_SPECIFICATIONS</h4>
+                    <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
+                        <div class="input-group">
+                            <label class="industrial-label">EXTERIOR_COLOR</label>
+                            <InputText @bind-Value="_carModel.Color" class="custom-input" />
+                        </div>
+                        <div class="input-group">
+                            <label class="industrial-label">DISPLACEMENT (L)</label>
+                            <InputNumber @bind-Value="_carModel.EngineDisplacement" class="custom-input" />
+                        </div>
+                        <div class="input-group">
+                            <label class="industrial-label">OUTPUT (HP)</label>
+                            <InputNumber @bind-Value="_carModel.EnginePower" class="custom-input" />
+                        </div>
+                    </div>
+                </div>
+
+                <div class="input-group">
+                    <label class="industrial-label">SYSTEM_DESCRIPTION_LOG</label>
+                    <InputTextArea @bind-Value="_carModel.Description" class="custom-input" rows="5" />
+                </div>
+
+                <div style="display: flex; gap: 20px; padding-top: 20px; border-top: 2px solid black;">
+                    <button type="submit" class="btn-black" style="flex: 2; padding: 20px; font-weight: 900;" disabled="@_isSubmitting">
+                        @(_isSubmitting ? "TRANSMITTING..." : "COMMIT_CHANGES")
+                    </button>
+                    <button type="button" class="btn-industrial" style="flex: 1;" @onclick='() => Nav.NavigateTo($"/car/{Id}")'>
+                        ABORT_CHANGES
+                    </button>
+                </div>
+            </div>
+        </EditForm>
+    }
+</div>
+
+<style>
+    .industrial-label { font-size: 0.7rem; font-weight: 900; margin-bottom: 10px; display: block; color: black; }
+    .user-error { color: #ff0055; font-size: 0.6rem; font-weight: 900; margin-top: 5px; text-transform: uppercase; }
+</style>
+
+@code {
+    [Parameter] public int Id { get; set; }
+    private CreateCarDto? _carModel;
+    private string? _statusMessage;
+    private bool _isError = false;
+    private bool _isSubmitting = false;
+
+    protected override async Task OnInitializedAsync()
+    {
+        try {
+            var car = await Http.GetFromJsonAsync<CarDto>($"cars/{Id}");
+            if (car != null) {
+                _carModel = new CreateCarDto {
+                    Brand = car.Brand, Model = car.Model, Price = car.Price, Year = car.Year,
+                    Color = car.Color, Vin = car.Vin, EngineDisplacement = car.EngineDisplacement,
+                    EnginePower = car.EnginePower, Mileage = car.Mileage, Description = car.Description,
+                    StatusName = car.Status, SellerId = car.SellerId
+                };
+            }
+        } catch { _statusMessage = "FAILED_TO_FETCH_RECORDS"; _isError = true; }
+    }
+
+    private async Task HandleUpdate()
+    {
+        _isSubmitting = true;
+        _statusMessage = "COMMENCING_UPLOAD...";
+        
+        var res = await Http.PutAsJsonAsync($"cars/{Id}", _carModel);
+        if (res.IsSuccessStatusCode) {
+            _isError = false;
+            _statusMessage = "DATABASE_SYNCHRONIZED_SUCCESSFULLY";
+            await Task.Delay(1000);
+            Nav.NavigateTo($"/car/{Id}");
+        } else {
+            _isError = true;
+            _statusMessage = "CORE_SERVER_REJECTED_UDPATE";
+        }
+        _isSubmitting = false;
+    }
+}

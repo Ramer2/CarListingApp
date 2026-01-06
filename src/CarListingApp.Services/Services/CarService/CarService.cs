@@ -173,7 +173,7 @@ public class CarService : ICarService
             var activeCars = seller.Cars
                 .Count(c => c.StatusNavigation.StatusName == "Active" && c.Id != car.Id);
 
-            if (activeCars > 0 && car.StatusNavigation.StatusName != "Active")
+            if (activeCars > 0 && car.StatusNavigation.StatusName == "Active")
                 throw new ArgumentException("User cannot have more than one active car.");
         }
 

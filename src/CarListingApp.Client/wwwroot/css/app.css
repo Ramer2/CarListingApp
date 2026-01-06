@@ -6,6 +6,11 @@
     --gray-light: #f4f4f4;
     --accent: #000000;
 
+    --industrial-magenta: #ff00ff;
+    --industrial-red: #ff0055;
+    --industrial-green: #00ff00;
+    --industrial-black: #000000;
+    
     /* Missing variables fix */
     --blazor-load-percentage: 0%;
     --blazor-load-percentage-text: "0%";
