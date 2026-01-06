@@ -1,6 +1,7 @@
 ﻿@page "/account"
 @attribute [Authorize]
 @using System.Security.Claims
+@using Blazored.LocalStorage
 @using CarListingApp.Services.DTOs.User
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
@@ -9,6 +10,7 @@
 @inject AuthenticationStateProvider AuthStateProvider
 @inject NavigationManager Nav
 @inject IJSRuntime Js
+@inject ILocalStorageService LocalStorage
 
 <h1 class="fw-900">ACCOUNT_PROFILE</h1>
 
@@ -37,28 +39,48 @@ else
         </div>
     </div>
 
-    @* MODIFY SECTION *@
-    <h3 class="fw-900 mt-5">USER_SETTINGS</h3>
-    <div class="heavy-card" style="background: white; padding: 20px;">
-        <div style="display: flex; gap: 15px; align-items: flex-end; width: 100%;">
-            <div style="flex: 1;">
-                <label style="font-size: 0.7rem; font-weight: 900; display: block; margin-bottom: 5px;">UPDATE_USERNAME</label>
-                <input type="text" @bind="_fullUserData.Username" class="custom-input" style="width: 100%; border: 2px solid black; padding: 10px;" />
+    @* COMBINED MODIFICATION SECTION *@
+    <h3 class="fw-900 mt-5">IDENTITY_&_SECURITY_PROTOCOL</h3>
+    <div class="heavy-card" style="background: white; padding: 30px; flex-direction: column;">
+        <div class="row-flex" style="display: flex; gap: 20px; width: 100%;">
+            <div class="input-group" style="flex: 1;">
+                <label style="font-size: 0.7rem; font-weight: 900;">NEW_USERNAME*</label>
+                <input type="text" @bind="_fullUserData.Username" class="custom-input" placeholder="Required..." />
             </div>
-            <button class="btn-black" style="height: 44px; padding: 0 30px;" @onclick="UpdateAccount">SAVE_CHANGES</button>
+            <div class="input-group" style="flex: 1;">
+                <label style="font-size: 0.7rem; font-weight: 900;">NEW_EMAIL_ADDRESS*</label>
+                <input type="text" @bind="_fullUserData.Email" class="custom-input" placeholder="Required..." />
+            </div>
         </div>
+        
+        <div class="input-group mt-3" style="max-width: 100%;">
+            <label style="font-size: 0.7rem; font-weight: 900;">CONFIRM_OR_NEW_PASSWORD*</label>
+            <input type="password" @bind="_newPassword" class="custom-input" placeholder="••••••••" />
+            <small style="font-size: 0.6rem; color: #666;">(You must enter a password to authorize changes)</small>
+        </div>
+
+        <button class="btn-black mt-4" 
+                style="width: 250px; @(IsFormInvalid ? "opacity: 0.5; cursor: not-allowed;" : "")" 
+                @onclick="UpdateAccount" 
+                disabled="@IsFormInvalid">
+            COMMIT_ALL_CHANGES
+        </button>
     </div>
 
-    @* DANGER ZONE *@
-    <h3 class="fw-900 mt-5" style="color: red;">DANGER_ZONE</h3>
-    <div class="heavy-card" style="border-color: red; padding: 20px; background: #fff5f5;">
-        <div class="d-flex justify-content-between align-items-center w-100">
-            <div>
-                <strong style="font-size: 0.8rem;">TERMINATE_ACCOUNT</strong>
-                <p style="font-size: 0.7rem; margin: 0;">Once deleted, all your listings and data will be removed from the system.</p>
-            </div>
-            <button class="btn-industrial btn-danger" @onclick="DeleteAccount" style="padding: 10px 20px;">DELETE_ACCOUNT</button>
+    @* TERMINATION ZONE (Prettified) *@
+    <h3 class="fw-900 mt-5" style="color: #ff0055;">TERMINATION_ZONE</h3>
+    <div class="heavy-card" style="border: 4px solid #ff0055; background: black; color: white; padding: 30px;">
+        <div style="flex: 1;">
+            <h4 class="fw-900" style="margin: 0; color: #ff0055;">ERASE_ALL_DATA</h4>
+            <p style="font-size: 0.75rem; opacity: 0.8; margin-top: 5px;">
+                WARNING: This command will purge your identity and all @(_fullUserData.ListedCars?.Count) associated listings.
+            </p>
         </div>
+        <button class="btn-industrial" 
+                style="background: #ff0055; color: white; border: none; padding: 15px 30px; font-weight: 900;" 
+                @onclick="DeleteAccount">
+            EXECUTE_DELETION
+        </button>
     </div>
 
     @* The User's Car Listings *@
@@ -85,8 +107,15 @@ else
 
 @code {
     private UserDto? _fullUserData;
+    private string? _newPassword;
     private string _debugMessage = "INITIALIZING...";
 
+    private bool IsFormInvalid => 
+        _fullUserData == null || 
+        string.IsNullOrWhiteSpace(_fullUserData.Username) || 
+        string.IsNullOrWhiteSpace(_fullUserData.Email) || 
+        string.IsNullOrWhiteSpace(_newPassword);
+    
     protected override async Task OnInitializedAsync()
     {
         await LoadUserData();
@@ -128,19 +157,32 @@ else
 
     private async Task UpdateAccount()
     {
-        if (_fullUserData == null) return;
+        if (IsFormInvalid) 
+        {
+            await Js.InvokeVoidAsync("alert", "ALL FIELDS (USERNAME, EMAIL, PASSWORD) ARE REQUIRED.");
+            return;
+        }
 
-        // Assuming your API endpoint is PUT /api/users/{id}
-        var response = await Http.PutAsJsonAsync($"users/{_fullUserData.Id}", _fullUserData);
+        var updateDto = new CreateUserDto 
+        { 
+            Username = _fullUserData!.Username,
+            Email = _fullUserData.Email,
+            Password = _newPassword, // Now mandatory
+            RoleName = _fullUserData.Role
+        };
+
+        var response = await Http.PutAsJsonAsync($"users/{_fullUserData.Id}", updateDto);
         
         if (response.IsSuccessStatusCode)
         {
-            await Js.InvokeVoidAsync("alert", "IDENTITY_UPDATED_SUCCESSFULLY");
+            await Js.InvokeVoidAsync("alert", "SYSTEM_PROTOCOL_UPDATED");
+            _newPassword = string.Empty; 
             await LoadUserData();
         }
         else
         {
-            await Js.InvokeVoidAsync("alert", "ERROR_UPDATING_IDENTITY");
+            var error = await response.Content.ReadAsStringAsync();
+            await Js.InvokeVoidAsync("alert", $"PROTOCOL_ERROR: {error}");
         }
     }
 
@@ -152,13 +194,13 @@ else
         
         if (confirmed)
         {
-            // Assuming your API endpoint is DELETE /api/users/{id}
             var response = await Http.DeleteAsync($"users/{_fullUserData.Id}");
             
             if (response.IsSuccessStatusCode)
             {
-                // Force a logout/refresh after account deletion
-                Nav.NavigateTo("/logout", forceLoad: true);
+                // Clear state and force reset
+                await LocalStorage.RemoveItemAsync("authToken");
+                Nav.NavigateTo("/", forceLoad: true);
             }
             else
             {

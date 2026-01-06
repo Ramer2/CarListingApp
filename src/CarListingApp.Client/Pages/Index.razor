@@ -4,28 +4,35 @@
 
 <h1 style="font-weight:900; letter-spacing:-1px; margin-bottom:30px;">ACTIVE LISTINGS</h1>
 
-@if (_cars == null)
-{
-    <div class="heavy-card" style="padding:40px; justify-content:center;">LOADING...</div>
-}
-else
-{
-    @foreach (var car in _cars)
+<div class="inventory-grid">
+    @if (_cars == null)
     {
-        <div class="heavy-card">
-            <div class="card-left">
-                <span style="font-size:0.7rem; border:1px solid black; padding:2px 5px;">@car.Status.ToUpper()</span>
-                <h2 style="margin:10px 0; font-weight:800;">@car.Brand @car.Model</h2>
-                <p style="color:#666; margin:0;">@car.Year • @car.EngineDisplacement L • @car.Color</p>
-            </div>
-            <div class="card-right">
-                <div style="font-size:0.7rem; color:#888;">PRICE</div>
-                <div style="font-size:1.6rem; font-weight:900; margin-bottom:15px;">$@car.Price.ToString("N0")</div>
-                <a href="car/@car.Id" class="btn-solid" style="width:100%;">View</a>
-            </div>
-        </div>
+        <div class="loading-box">SYNCHRONIZING_INVENTORY...</div>
     }
-}
+    else if (!_cars.Any())
+    {
+        <div class="loading-box">NO_VEHICLES_FOUND_IN_DATABASE.</div>
+    }
+    else
+    {
+        @foreach (var car in _cars)
+        {
+            <div class="heavy-card" style="margin-bottom: 15px; background: white;">
+                <div style="padding: 20px; flex: 1; border-right: 2px solid black;">
+                    <div style="font-size: 0.6rem; font-weight: 900; color: #888;">VEHICLE_ID: #@car.Id</div>
+                    <h4 style="margin: 5px 0; font-weight: 900;">@car.Brand.ToUpper() @car.Model.ToUpper()</h4>
+                    <span class="status-badge" style="background: @(car.Status == "Active" ? "#00ff00" : "magenta"); color: @(car.Status == "Active" ? "black" : "white");">
+                        @car.Status.ToUpper()
+                    </span>
+                </div>
+                <div style="width: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fafafa;">
+                    <div style="font-weight: 900; font-size: 1.2rem;">$@car.Price.ToString("N0")</div>
+                    <a href="/car/@car.Id" style="font-size: 0.7rem; color: black; font-weight: bold; margin-top: 10px;">VIEW_DETAILS</a>
+                </div>
+            </div>
+        }
+    }
+</div>
 
 @code {
     private List<CarDto>? _cars;
