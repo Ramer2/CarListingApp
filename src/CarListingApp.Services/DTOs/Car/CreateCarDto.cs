@@ -34,4 +34,6 @@ public class CreateCarDto
     public int? SellerId { get; set; }
 
     public string? Description { get; set; }
+    
+    public string? StatusName { get; set; }
 }

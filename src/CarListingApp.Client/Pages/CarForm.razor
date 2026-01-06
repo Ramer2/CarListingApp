@@ -1,50 +1,77 @@
 ﻿@page "/car/create"
-@attribute [Authorize]
 @using CarListingApp.Services.DTOs.Car
-@using Microsoft.AspNetCore.Authorization
 @inject HttpClient Http
 @inject NavigationManager Nav
 
-<div style="max-width: 800px; margin: 0 auto;">
-    <h1 style="font-weight: 900; letter-spacing: -1px; margin-bottom: 2rem;">NEW LISTING ENTRY</h1>
+<div class="container-70">
+    <h1 class="fw-900">NEW_ENTRY_LOG</h1>
 
     <EditForm Model="_carModel" OnValidSubmit="HandleSubmit">
         <DataAnnotationsValidator />
+        <ValidationSummary class="text-danger mb-3" style="font-size: 0.7rem; font-weight: bold;" />
 
         <div class="heavy-card" style="flex-direction: column;">
             <div class="card-content" style="border-right: none;">
                 
+                @* Required Section *@
                 <div class="row-flex">
                     <div class="input-group">
-                        <label>BRAND</label>
-                        <InputText @bind-Value="_carModel.Brand" class="custom-input" placeholder="e.g. BMW" />
+                        <label>BRAND*</label>
+                        <InputText @bind-Value="_carModel.Brand" class="custom-input" />
                     </div>
                     <div class="input-group">
-                        <label>MODEL</label>
-                        <InputText @bind-Value="_carModel.Model" class="custom-input" placeholder="e.g. M4" />
+                        <label>MODEL*</label>
+                        <InputText @bind-Value="_carModel.Model" class="custom-input" />
                     </div>
                 </div>
 
                 <div class="row-flex mt-3">
                     <div class="input-group">
-                        <label>PRICE ($)</label>
+                        <label>PRICE ($)*</label>
                         <InputNumber @bind-Value="_carModel.Price" class="custom-input" />
                     </div>
                     <div class="input-group">
-                        <label>YEAR</label>
+                        <label>YEAR (1-3000)*</label>
                         <InputNumber @bind-Value="_carModel.Year" class="custom-input" />
                     </div>
                 </div>
 
+                @* Optional Section *@
+                <div class="line-separator my-4"></div>
+
+                <div class="row-flex">
+                    <div class="input-group">
+                        <label>COLOR (OPTIONAL)</label>
+                        <InputText @bind-Value="_carModel.Color" class="custom-input" />
+                    </div>
+                    <div class="input-group">
+                        <label>VIN (OPTIONAL)</label>
+                        <InputText @bind-Value="_carModel.Vin" class="custom-input" />
+                    </div>
+                </div>
+
+                <div class="row-flex mt-3">
+                    <div class="input-group">
+                        <label>ENGINE DISPLACEMENT (L) (OPTIONAL)</label>
+                        <InputNumber @bind-Value="_carModel.EngineDisplacement" class="custom-input" />
+                    </div>
+                    <div class="input-group">
+                        <label>ENGINE POWER (HP) (OPTIONAL)</label>
+                        <InputNumber @bind-Value="_carModel.EnginePower" class="custom-input" />
+                    </div>
+                    <div class="input-group">
+                        <label>MILEAGE (KM) (OPTIONAL)</label>
+                        <InputNumber @bind-Value="_carModel.Mileage" class="custom-input" />
+                    </div>
+                </div>
+
                 <div class="input-group mt-3">
-                    <label>DESCRIPTION</label>
-                    <InputTextArea @bind-Value="_carModel.Description" class="custom-input" rows="4" placeholder="Vehicle condition, history, etc..." />
+                    <label>DESCRIPTION (OPTIONAL)</label>
+                    <InputTextArea @bind-Value="_carModel.Description" class="custom-input" rows="4" />
                 </div>
 
                 <div class="mt-4">
-                    <button type="submit" class="btn-black" style="width: auto; padding: 15px 40px;">
-                        PUBLISH LISTING
-                    </button>
+                    <button type="submit" class="btn-black">PUBLISH_LISTING</button>
                 </div>
             </div>
         </div>

@@ -2,18 +2,20 @@
 @attribute [Authorize]
 @using System.Security.Claims
 @using CarListingApp.Services.DTOs.User
-@using Microsoft.AspNetCore.Components.Authorization
-
 @using Microsoft.AspNetCore.Authorization
+@using Microsoft.AspNetCore.Components.Authorization
+@using Microsoft.JSInterop
 @inject HttpClient Http
 @inject AuthenticationStateProvider AuthStateProvider
+@inject NavigationManager Nav
+@inject IJSRuntime Js
 
 <h1 class="fw-900">ACCOUNT_PROFILE</h1>
 
-@if (fullUserData == null)
+@if (_fullUserData == null)
 {
     <div class="heavy-card" style="padding: 40px; border-style: dashed;">
-        <h3 class="fw-900">SYSTEM_STATUS: @debugMessage</h3>
+        <h3 class="fw-900">SYSTEM_STATUS: @_debugMessage</h3>
     </div>
 }
 else
@@ -22,23 +24,47 @@ else
     <div class="heavy-card">
         <div class="card-left-visual" style="background: #ff00ff; width: 30%; color: white;">
             <i class="bi bi-person-fill" style="font-size: 5rem;"></i>
-            <div class="mt-2 fw-bold text-uppercase" style="background: black; padding: 5px 10px;">@fullUserData.Username</div>
+            <div class="mt-2 fw-bold text-uppercase" style="background: black; padding: 5px 10px;">@_fullUserData.Username</div>
         </div>
 
         <div class="card-right-info">
             <div class="info-grid" style="grid-template-columns: 1fr;">
-                <div class="info-item"><strong>EMAIL:</strong> @fullUserData.Email</div>
-                <div class="info-item"><strong>ROLE:</strong> @fullUserData.Role</div>
-                <div class="info-item"><strong>DATABASE_ID:</strong> @fullUserData.Id</div>
-                <div class="info-item"><strong>STATUS:</strong> @(fullUserData.IsBlocked ? "LOCKED" : "OPERATIONAL")</div>
+                <div class="info-item"><strong>EMAIL:</strong> @_fullUserData.Email</div>
+                <div class="info-item"><strong>ROLE:</strong> @_fullUserData.Role</div>
+                <div class="info-item"><strong>DATABASE_ID:</strong> @_fullUserData.Id</div>
+                <div class="info-item"><strong>STATUS:</strong> @(_fullUserData.IsBlocked ? "LOCKED" : "OPERATIONAL")</div>
             </div>
         </div>
     </div>
 
+    @* MODIFY SECTION *@
+    <h3 class="fw-900 mt-5">USER_SETTINGS</h3>
+    <div class="heavy-card" style="background: white; padding: 20px;">
+        <div style="display: flex; gap: 15px; align-items: flex-end; width: 100%;">
+            <div style="flex: 1;">
+                <label style="font-size: 0.7rem; font-weight: 900; display: block; margin-bottom: 5px;">UPDATE_USERNAME</label>
+                <input type="text" @bind="_fullUserData.Username" class="custom-input" style="width: 100%; border: 2px solid black; padding: 10px;" />
+            </div>
+            <button class="btn-black" style="height: 44px; padding: 0 30px;" @onclick="UpdateAccount">SAVE_CHANGES</button>
+        </div>
+    </div>
+
+    @* DANGER ZONE *@
+    <h3 class="fw-900 mt-5" style="color: red;">DANGER_ZONE</h3>
+    <div class="heavy-card" style="border-color: red; padding: 20px; background: #fff5f5;">
+        <div class="d-flex justify-content-between align-items-center w-100">
+            <div>
+                <strong style="font-size: 0.8rem;">TERMINATE_ACCOUNT</strong>
+                <p style="font-size: 0.7rem; margin: 0;">Once deleted, all your listings and data will be removed from the system.</p>
+            </div>
+            <button class="btn-industrial btn-danger" @onclick="DeleteAccount" style="padding: 10px 20px;">DELETE_ACCOUNT</button>
+        </div>
+    </div>
+
     @* The User's Car Listings *@
-    <h3 class="fw-900 mt-5">LISTING_HISTORY (@(fullUserData.ListedCars?.Count ?? 0))</h3>
+    <h3 class="fw-900 mt-5">LISTING_HISTORY (@(_fullUserData.ListedCars?.Count ?? 0))</h3>
     <div class="history-list">
-        @foreach (var car in fullUserData.ListedCars)
+        @foreach (var car in _fullUserData.ListedCars)
         {
             <div class="heavy-card" style="margin-bottom: 15px; background: white;">
                 <div style="padding: 20px; flex: 1; border-right: 2px solid black;">
@@ -58,49 +84,86 @@ else
 }
 
 @code {
-    private UserDto? fullUserData;
-    private string debugMessage = "INITIALIZING...";
+    private UserDto? _fullUserData;
+    private string _debugMessage = "INITIALIZING...";
 
     protected override async Task OnInitializedAsync()
+    {
+        await LoadUserData();
+    }
+
+    private async Task LoadUserData()
     {
         try 
         {
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             var user = authState.User;
 
-            // 1. Rename to userEmail to avoid naming conflicts
             var userEmail = user.FindFirst(ClaimTypes.Email)?.Value ?? user.FindFirst("email")?.Value ?? user.FindFirst("emailaddress")?.Value;
 
             if (string.IsNullOrEmpty(userEmail))
             {
-                debugMessage = "ERROR: EMAIL_CLAIM_MISSING_FROM_TOKEN<" + userEmail + ">";
+                _debugMessage = "ERROR: EMAIL_CLAIM_MISSING_FROM_TOKEN";
                 return;
             }
 
-            debugMessage = "SYNCING_DATA_FOR: " + userEmail?.ToUpper() + "...";
-
-            // 2. Escape the email for the URL (converts @ to %40)
             var encodedEmail = Uri.EscapeDataString(userEmail);
-            
-            // 3. Use the explicit variable in the string
-            var requestUrl = $"users/by-email/{encodedEmail}";
-            var response = await Http.GetAsync(requestUrl);
+            var response = await Http.GetAsync($"users/by-email/{encodedEmail}");
 
             if (response.IsSuccessStatusCode)
             {
-                fullUserData = await response.Content.ReadFromJsonAsync<UserDto>();
-                debugMessage = "SUCCESS";
+                _fullUserData = await response.Content.ReadFromJsonAsync<UserDto>();
+                _debugMessage = "SUCCESS";
             }
             else
             {
-                var errorBody = await response.Content.ReadAsStringAsync();
-                debugMessage = $"SERVER_REJECTED: {response.StatusCode}";
+                _debugMessage = $"SERVER_REJECTED: {response.StatusCode}";
             }
         }
         catch (Exception ex)
         {
-            debugMessage = $"CRITICAL_EXCEPTION: {ex.Message}";
-            Console.WriteLine(ex.ToString());
+            _debugMessage = $"CRITICAL_EXCEPTION: {ex.Message}";
+        }
+    }
+
+    private async Task UpdateAccount()
+    {
+        if (_fullUserData == null) return;
+
+        // Assuming your API endpoint is PUT /api/users/{id}
+        var response = await Http.PutAsJsonAsync($"users/{_fullUserData.Id}", _fullUserData);
+        
+        if (response.IsSuccessStatusCode)
+        {
+            await Js.InvokeVoidAsync("alert", "IDENTITY_UPDATED_SUCCESSFULLY");
+            await LoadUserData();
+        }
+        else
+        {
+            await Js.InvokeVoidAsync("alert", "ERROR_UPDATING_IDENTITY");
+        }
+    }
+
+    private async Task DeleteAccount()
+    {
+        if (_fullUserData == null) return;
+
+        bool confirmed = await Js.InvokeAsync<bool>("confirm", "CRITICAL_ACTION: PERMANENTLY DELETE ACCOUNT?");
+        
+        if (confirmed)
+        {
+            // Assuming your API endpoint is DELETE /api/users/{id}
+            var response = await Http.DeleteAsync($"users/{_fullUserData.Id}");
+            
+            if (response.IsSuccessStatusCode)
+            {
+                // Force a logout/refresh after account deletion
+                Nav.NavigateTo("/logout", forceLoad: true);
+            }
+            else
+            {
+                await Js.InvokeVoidAsync("alert", "DELETION_FAILED_BY_SERVER");
+            }
         }
     }
 }

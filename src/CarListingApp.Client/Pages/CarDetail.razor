@@ -1,12 +1,14 @@
 ﻿@page "/car/{Id:int}"
 @using System.Security.Claims
 @using CarListingApp.Services.DTOs.Car
+@using CarListingApp.Services.DTOs.User
 @using Microsoft.AspNetCore.Components.Authorization
 @inject HttpClient Http
 @inject NavigationManager Nav
+@inject AuthenticationStateProvider AuthStateProvider
 
 <div class="details-wrapper">
-    @if (car == null)
+    @if (_car == null)
     {
         <div class="loading-box">INITIALIZING SYSTEM DATA...</div>
     }
@@ -15,28 +17,28 @@
         <div class="heavy-card">
             <div class="card-left-visual">
                 <i class="bi bi-car-front-fill"></i>
-                <div class="status-overlay">@car.Status.ToUpper()</div>
+                <div class="status-overlay">@_car.Status.ToUpper()</div>
             </div>
 
             <div class="card-right-info">
                 <div class="d-flex justify-content-between align-items-start">
                     <div>
-                        <h1 class="text-uppercase fw-900">@car.Brand @car.Model</h1>
-                        <p class="specs-sub">YEAR: @car.Year // VIN: @(car.Vin ?? "N/A")</p>
+                        <h1 class="text-uppercase fw-900">@_car.Brand @_car.Model</h1>
+                        <p class="specs-sub">YEAR: @_car.Year // VIN: @(_car.Vin ?? "N/A")</p>
                     </div>
-                    <div class="price-tag">$@car.Price.ToString("N0")</div>
+                    <div class="price-tag">$@_car.Price.ToString("N0")</div>
                 </div>
 
                 <div class="info-grid">
-                    <div class="info-item"><strong>ENGINE:</strong> @car.EngineDisplacement L</div>
-                    <div class="info-item"><strong>POWER:</strong> @car.EnginePower HP</div>
-                    <div class="info-item"><strong>MILEAGE:</strong> @(car.Mileage?.ToString("N0") ?? "0") KM</div>
-                    <div class="info-item"><strong>COLOR:</strong> @car.Color?.ToUpper()</div>
+                    <div class="info-item"><strong>ENGINE:</strong> @_car.EngineDisplacement L</div>
+                    <div class="info-item"><strong>POWER:</strong> @_car.EnginePower HP</div>
+                    <div class="info-item"><strong>MILEAGE:</strong> @(_car.Mileage?.ToString("N0") ?? "0") KM</div>
+                    <div class="info-item"><strong>COLOR:</strong> @_car.Color?.ToUpper()</div>
                 </div>
 
                 <div class="description-box">
                     <strong>DESCRIPTION:</strong><br />
-                    <p>@(string.IsNullOrEmpty(car.Description) ? "NO DATA PROVIDED." : car.Description)</p>
+                    <p>@(string.IsNullOrEmpty(_car.Description) ? "NO DATA PROVIDED." : _car.Description)</p>
                 </div>
 
                 <AuthorizeView>
@@ -47,7 +49,7 @@
                                 <h5 class="panel-title">SELLER CONTROLS</h5>
                                 <div class="action-buttons">
                                     <button class="btn-industrial btn-warn" @onclick="GoToEdit">EDIT</button>
-                                    @if (car.Status == "Active")
+                                    @if (_car.Status == "Active")
                                     {
                                         <button class="btn-industrial btn-success" @onclick="MarkAsSold">MARK SOLD</button>
                                     }
@@ -140,27 +142,56 @@
 
 @code {
     [Parameter] public int Id { get; set; }
-    private CarDto? car;
+    private CarDto? _car;
+    private int? _currentUserId;
 
     protected override async Task OnInitializedAsync()
     {
-        try { car = await Http.GetFromJsonAsync<CarDto>($"cars/{Id}"); }
+        try {
+            _car = await Http.GetFromJsonAsync<CarDto>($"cars/{Id}");
+            
+            // Fetch current user ID to check ownership
+            var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+            var email = authState.User.FindFirst(ClaimTypes.Email)?.Value ?? authState.User.FindFirst("email")?.Value ?? authState.User.FindFirst("emailaddress")?.Value;
+            if (email != null)
+            {
+                var userProfile = await Http.GetFromJsonAsync<UserDto>($"users/by-email/" + email);
+                _currentUserId = userProfile?.Id;
+            }
+        }
         catch { Nav.NavigateTo("/"); }
     }
 
     private bool IsOwnerOrAdmin(ClaimsPrincipal user)
     {
         if (user.IsInRole("Admin")) return true;
-        // For now, returning true to show buttons; 
-        // Logic should be: return car?.SellerId == user.FindFirst("sub")?.Value;
-        return true; 
+        return _car?.SellerId == _currentUserId;
     }
 
     private async Task MarkAsSold()
     {
-        if (car == null) return;
-        car.Status = "Sold";
-        await Http.PutAsJsonAsync($"cars/{Id}", car);
+        if (_car == null) return;
+        // Backend expectation: PUT /cars/{id} updates status
+
+        var update = new CreateCarDto
+        {
+            Price = _car.Price,
+            Brand = _car.Brand,
+            Model = _car.Model,
+            Color = _car.Color,
+            Year = _car.Year,
+            Vin = _car.Vin,
+            EngineDisplacement = _car.EngineDisplacement,
+            EnginePower = _car.EnginePower,
+            Mileage = _car.Mileage,
+            SellerId = _car.SellerId,
+            Description = _car.Description,
+            StatusName = "Sold"
+        };
+        
+        await Http.PutAsJsonAsync($"cars/{Id}", update);
+        StateHasChanged();
+        Nav.NavigateTo(Nav.Uri, forceLoad: true);
     }
 
     private void GoToEdit() => Nav.NavigateTo($"/car/edit/{Id}");
@@ -169,5 +200,14 @@
     {
         var response = await Http.DeleteAsync($"cars/{Id}");
         if (response.IsSuccessStatusCode) Nav.NavigateTo("/");
+    }
+
+    private async Task ToggleFavorite()
+    {
+        // Placeholder for future feature
+        Console.WriteLine($"Toggling favorite for car {Id}");
+        /* var response = await Http.PostAsync($"favorites/{Id}", null);
+        if (response.IsSuccessStatusCode) { // update UI }
+        */
     }
 }

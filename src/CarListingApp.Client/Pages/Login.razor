@@ -10,30 +10,30 @@
 
 <div class="container mt-5" style="max-width: 400px;">
     <h3>Login</h3>
-    <EditForm Model="loginModel" OnValidSubmit="HandleLogin">
+    <EditForm Model="_loginModel" OnValidSubmit="HandleLogin">
         <div class="mb-3">
             <label>Username or Email</label>
-            <InputText @bind-Value="identifier" class="form-control" />
+            <InputText @bind-Value="_identifier" class="form-control" />
         </div>
         <div class="mb-3">
             <label>Password</label>
-            <InputText @bind-Value="loginModel.Password" type="password" class="form-control" />
+            <InputText @bind-Value="_loginModel.Password" type="password" class="form-control" />
         </div>
         <button type="submit" class="btn btn-primary">Login</button>
     </EditForm>
 </div>
 
 @code {
-    private LoginUserDto loginModel = new();
-    private string identifier;
+    private LoginUserDto _loginModel = new();
+    private string _identifier;
 
     private async Task HandleLogin()
     {
         // Simple logic to determine if input is email or username
-        if (identifier.Contains("@")) loginModel.Email = identifier;
-        else loginModel.Username = identifier;
+        if (_identifier.Contains("@")) _loginModel.Email = _identifier;
+        else _loginModel.Username = _identifier;
 
-        var response = await Http.PostAsJsonAsync("login", loginModel);
+        var response = await Http.PostAsJsonAsync("login", _loginModel);
         if (response.IsSuccessStatusCode)
         {
             var result = await response.Content.ReadFromJsonAsync<TokenDto>();

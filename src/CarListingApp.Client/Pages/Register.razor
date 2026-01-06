@@ -7,10 +7,10 @@
         <div class="card-content" style="border-right: none; border-bottom: var(--border-weight) solid var(--black);">
             <h2 style="font-weight: 900; text-transform: uppercase; margin-bottom: 1.5rem;">Create Account</h2>
             
-            @if (!string.IsNullOrEmpty(error))
+            @if (!string.IsNullOrEmpty(_error))
             {
                 <div style="color: red; border: 2px solid red; padding: 10px; margin-bottom: 1rem; font-size: 0.75rem; font-weight: bold;">
-                    REGISTRATION_ERROR: @error.ToUpper()
+                    REGISTRATION_ERROR: @_error.ToUpper()
                 </div>
             }
 
@@ -19,11 +19,11 @@
                 <label style="display: block; font-weight: bold; font-size: 0.7rem; margin-bottom: 8px;">ACCOUNT TYPE</label>
                 <div style="display: flex; gap: 20px;">
                     <label class="radio-container">
-                        <input type="radio" name="role" value="User" checked="@(regModel.RoleName == "User")" @onchange="@(() => regModel.RoleName = "User")" />
+                        <input type="radio" name="role" value="User" checked="@(_regModel.RoleName == "User")" @onchange="@(() => _regModel.RoleName = "User")" />
                         <span class="custom-radio"></span> INDIVIDUAL
                     </label>
                     <label class="radio-container">
-                        <input type="radio" name="role" value="Dealer" checked="@(regModel.RoleName == "Dealer")" @onchange="@(() => regModel.RoleName = "Dealer")" />
+                        <input type="radio" name="role" value="Dealer" checked="@(_regModel.RoleName == "Dealer")" @onchange="@(() => _regModel.RoleName = "Dealer")" />
                         <span class="custom-radio"></span> DEALER
                     </label>
                 </div>
@@ -31,17 +31,17 @@
 
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; font-weight: bold; font-size: 0.7rem; margin-bottom: 5px;">USERNAME</label>
-                <input @bind="regModel.Username" class="custom-input" placeholder="User123..." />
+                <input @bind="_regModel.Username" class="custom-input" placeholder="User123..." />
             </div>
 
             <div style="margin-bottom: 1rem;">
                 <label style="display: block; font-weight: bold; font-size: 0.7rem; margin-bottom: 5px;">EMAIL ADDRESS</label>
-                <input @bind="regModel.Email" type="email" class="custom-input" placeholder="name@example.com" />
+                <input @bind="_regModel.Email" type="email" class="custom-input" placeholder="name@example.com" />
             </div>
 
             <div style="margin-bottom: 1.5rem;">
                 <label style="display: block; font-weight: bold; font-size: 0.7rem; margin-bottom: 5px;">PASSWORD</label>
-                <input @bind="regModel.Password" type="password" class="custom-input" placeholder="********" />
+                <input @bind="_regModel.Password" type="password" class="custom-input" placeholder="********" />
             </div>
 
             <button @onclick="HandleRegister" class="btn-black">Register User</button>
@@ -103,19 +103,19 @@
 </style>
 
 @code {
-    private RegisterDto regModel = new() { RoleName = "User" };
-    private string? error;
+    private RegisterDto _regModel = new() { RoleName = "User" };
+    private string? _error;
 
     private async Task HandleRegister()
     {
-        var response = await Http.PostAsJsonAsync("users", regModel);
+        var response = await Http.PostAsJsonAsync("users", _regModel);
         if (response.IsSuccessStatusCode)
         {
             Nav.NavigateTo("/login");
         }
         else
         {
-            error = await response.Content.ReadAsStringAsync();
+            _error = await response.Content.ReadAsStringAsync();
         }
     }
 

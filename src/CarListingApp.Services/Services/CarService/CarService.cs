@@ -101,7 +101,7 @@ public class CarService : ICarService
                 throw new ArgumentException("Another car has this Vin."); 
         }
         
-        var status = await  _context.Statuses
+        var status = await _context.Statuses
             .FirstOrDefaultAsync(s => s.StatusName.Equals("Active"), cancellationToken);
         
         var newCar = new Car
@@ -185,7 +185,13 @@ public class CarService : ICarService
             if (vinExists)
                 throw new ArgumentException("Another car has this VIN.");
         }
-
+        
+        var status = await _context.Statuses
+            .FirstOrDefaultAsync(s => s.StatusName.Equals(createCarDto.StatusName), cancellationToken);
+        
+        if (status == null)
+            throw new ArgumentException("Status not found.");
+        
         car.Price = createCarDto.Price;
         car.Brand = createCarDto.Brand;
         car.Model = createCarDto.Model;
@@ -196,6 +202,7 @@ public class CarService : ICarService
         car.EnginePower = createCarDto.EnginePower;
         car.Mileage = createCarDto.Mileage;
         car.Description = createCarDto.Description;
+        car.StatusNavigation = status;
 
         await _context.SaveChangesAsync(cancellationToken);
 

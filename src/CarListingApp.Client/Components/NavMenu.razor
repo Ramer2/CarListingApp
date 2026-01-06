@@ -11,6 +11,11 @@
     <div class="nav-links" style="display: flex; align-items: center;">
         <NavLink href="" Match="NavLinkMatch.All">Inventory</NavLink>
 
+        <AuthorizeView Roles="Admin">
+            <Authorized>
+                <NavLink href="admin/dashboard" class="btn-nav-accent" style="background: red !important;">DASHBOARD</NavLink>
+            </Authorized>
+        </AuthorizeView>
         <AuthorizeView>
             <Authorized>
                 <NavLink href="car/create">Add_Car</NavLink>

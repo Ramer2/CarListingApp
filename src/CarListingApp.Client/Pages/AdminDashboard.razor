@@ -1,4 +1,4 @@
-﻿@page "/admin/users"
+﻿@page "/admin/dashboard"
 @attribute [Authorize(Roles = "Admin")]
 @using CarListingApp.Services.DTOs.User
 @using Microsoft.AspNetCore.Authorization
@@ -19,13 +19,13 @@
             </tr>
             </thead>
             <tbody>
-            @if (users == null)
+            @if (_users == null)
             {
                 <tr><td colspan="5" class="text-center">Loading users...</td></tr>
             }
             else
             {
-                @foreach (var user in users)
+                @foreach (var user in _users)
                 {
                     <tr>
                         <td>@user.Id</td>
@@ -51,12 +51,12 @@
 </div>
 
 @code {
-    private List<UserDto>? users;
+    private List<UserDto>? _users;
 
     protected override async Task OnInitializedAsync()
     {
         try {
-            users = await Http.GetFromJsonAsync<List<UserDto>>("users");
+            _users = await Http.GetFromJsonAsync<List<UserDto>>("users");
         } catch { /* Handle unauthorized or error */ }
     }
 }
