@@ -3,108 +3,89 @@
 @inject HttpClient Http
 @inject NavigationManager Nav
 
-<div class="container-70">
+<div class="container-70" style="margin-top: 3rem;">
     <h1 class="fw-900">NEW_ENTRY_LOG</h1>
 
     <EditForm Model="_carModel" OnValidSubmit="HandleSubmit">
         <DataAnnotationsValidator />
-        <ValidationSummary class="text-danger mb-3" style="font-size: 0.7rem; font-weight: bold;" />
 
-        <div class="heavy-card" style="flex-direction: column;">
-            <div class="card-content" style="border-right: none;">
+        <div class="heavy-card" style="flex-direction: column; background: white; padding: 40px; gap: 30px;">
+            
+            @* Required Section *@
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                <div class="input-group">
+                    <label style="font-size: 0.7rem; font-weight: 900; margin-bottom: 8px;">BRAND*</label>
+                    <InputText @bind-Value="_carModel.Brand" class="custom-input" placeholder="e.g., NISSAN" />
+                    <ValidationMessage For="@(() => _carModel.Brand)" class="user-error" />
+                </div>
+                <div class="input-group">
+                    <label style="font-size: 0.7rem; font-weight: 900; margin-bottom: 8px;">MODEL*</label>
+                    <InputText @bind-Value="_carModel.Model" class="custom-input" placeholder="e.g., SKYLINE" />
+                    <ValidationMessage For="@(() => _carModel.Model)" class="user-error" />
+                </div>
+            </div>
+
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
+                <div class="input-group">
+                    <label style="font-size: 0.7rem; font-weight: 900; margin-bottom: 8px;">PRICE ($)*</label>
+                    <InputNumber @bind-Value="_carModel.Price" class="custom-input" />
+                    <ValidationMessage For="@(() => _carModel.Price)" class="user-error" />
+                </div>
+                <div class="input-group">
+                    <label style="font-size: 0.7rem; font-weight: 900; margin-bottom: 8px;">YEAR (1900-2026)*</label>
+                    <InputNumber @bind-Value="_carModel.Year" class="custom-input" />
+                    <ValidationMessage For="@(() => _carModel.Year)" class="user-error" />
+                </div>
+            </div>
+
+            <div style="border-top: 1px dashed #ccc; padding-top: 10px;">
+                <h4 class="fw-900" style="font-size: 0.75rem; color: #888; margin-bottom: 20px;">OPTIONAL_SPECIFICATIONS</h4>
                 
-                @* Required Section *@
-                <div class="row-flex">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px;">
                     <div class="input-group">
-                        <label>BRAND*</label>
-                        <InputText @bind-Value="_carModel.Brand" class="custom-input" />
-                    </div>
-                    <div class="input-group">
-                        <label>MODEL*</label>
-                        <InputText @bind-Value="_carModel.Model" class="custom-input" />
-                    </div>
-                </div>
-
-                <div class="row-flex mt-3">
-                    <div class="input-group">
-                        <label>PRICE ($)*</label>
-                        <InputNumber @bind-Value="_carModel.Price" class="custom-input" />
-                    </div>
-                    <div class="input-group">
-                        <label>YEAR (1-3000)*</label>
-                        <InputNumber @bind-Value="_carModel.Year" class="custom-input" />
-                    </div>
-                </div>
-
-                @* Optional Section *@
-                <div class="line-separator my-4"></div>
-
-                <div class="row-flex">
-                    <div class="input-group">
-                        <label>COLOR (OPTIONAL)</label>
+                        <label style="font-size: 0.65rem; font-weight: 900; margin-bottom: 5px;">COLOR</label>
                         <InputText @bind-Value="_carModel.Color" class="custom-input" />
                     </div>
                     <div class="input-group">
-                        <label>VIN (OPTIONAL)</label>
-                        <InputText @bind-Value="_carModel.Vin" class="custom-input" />
-                    </div>
-                </div>
-
-                <div class="row-flex mt-3">
-                    <div class="input-group">
-                        <label>ENGINE DISPLACEMENT (L) (OPTIONAL)</label>
+                        <label style="font-size: 0.65rem; font-weight: 900; margin-bottom: 5px;">ENGINE (L)</label>
                         <InputNumber @bind-Value="_carModel.EngineDisplacement" class="custom-input" />
                     </div>
                     <div class="input-group">
-                        <label>ENGINE POWER (HP) (OPTIONAL)</label>
+                        <label style="font-size: 0.65rem; font-weight: 900; margin-bottom: 5px;">POWER (HP)</label>
                         <InputNumber @bind-Value="_carModel.EnginePower" class="custom-input" />
                     </div>
-                    <div class="input-group">
-                        <label>MILEAGE (KM) (OPTIONAL)</label>
-                        <InputNumber @bind-Value="_carModel.Mileage" class="custom-input" />
-                    </div>
                 </div>
+            </div>
 
-                <div class="input-group mt-3">
-                    <label>DESCRIPTION (OPTIONAL)</label>
-                    <InputTextArea @bind-Value="_carModel.Description" class="custom-input" rows="4" />
-                </div>
+            <div class="input-group">
+                <label style="font-size: 0.7rem; font-weight: 900; margin-bottom: 8px;">TECHNICAL_DESCRIPTION</label>
+                <InputTextArea @bind-Value="_carModel.Description" class="custom-input" rows="4" placeholder="Enter vehicle history..." />
+            </div>
 
-                <div class="mt-4">
-                    <button type="submit" class="btn-black">PUBLISH_LISTING</button>
-                </div>
+            <div style="padding-top: 20px; border-top: 2px solid black;">
+                <button type="submit" class="btn-black" style="width: 300px; padding: 18px;">PUBLISH_LOG_ENTRY</button>
+                @if (_showPostError)
+                {
+                    <span style="color: #ff0055; font-weight: 900; font-size: 0.7rem; margin-left: 20px;">[UPLOAD_FAILED]: VERIFY DATA FIELDS.</span>
+                }
             </div>
         </div>
     </EditForm>
 </div>
 
 <style>
-    .row-flex { display: flex; gap: 20px; }
-    .input-group { flex: 1; display: flex; flex-direction: column; }
-    .input-group label { font-size: 0.7rem; font-weight: 900; margin-bottom: 5px; }
-    
-    .custom-input {
-        border: 2px solid black;
-        padding: 10px;
-        font-family: inherit;
-        outline: none;
-        background: white;
-    }
-
-    .custom-input:focus { background: #f0f0f0; }
-    .mt-3 { margin-top: 1rem; }
-    .mt-4 { margin-top: 1.5rem; }
+    .user-error { color: #ff0055; font-size: 0.6rem; font-weight: 900; margin-top: 5px; text-transform: uppercase; }
 </style>
 
 @code {
     private CreateCarDto _carModel = new();
+    private bool _showPostError = false;
 
     private async Task HandleSubmit()
     {
+        _showPostError = false;
         var response = await Http.PostAsJsonAsync("cars", _carModel);
-        if (response.IsSuccessStatusCode)
-        {
-            Nav.NavigateTo("/");
-        }
+        if (response.IsSuccessStatusCode) Nav.NavigateTo("/");
+        else _showPostError = true;
     }
 }

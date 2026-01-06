@@ -10,27 +10,37 @@
 
 <div style="max-width: 450px; margin: 5rem auto;">
     <div class="heavy-card" style="flex-direction: column; background: white;">
-        <div style="background: black; color: white; padding: 20px; text-align: center;">
+        <div style="background: black; color: white; padding: 25px; text-align: center;">
             <h2 class="fw-900" style="margin: 0; letter-spacing: 2px;">ACCESS_LOGIN</h2>
         </div>
         
-        <div style="padding: 40px;">
-            <EditForm Model="_loginModel" OnValidSubmit="HandleLogin">
-                <div class="input-group mb-4">
-                    <label style="font-weight: 900; font-size: 0.7rem;">IDENTIFIER (EMAIL/USER)</label>
-                    <input @bind="_identifier" class="custom-input" style="width: 100%;" />
+        <div style="padding: 40px; display: flex; flex-direction: column; gap: 30px;">
+            
+            @if (!string.IsNullOrEmpty(_userErrorMessage))
+            {
+                <div style="border: 2px solid #ff0055; background: #fff5f7; color: #ff0055; padding: 15px; font-weight: 900; font-size: 0.75rem;">
+                    [ACCESS_DENIED]: @_userErrorMessage.ToUpper()
+                </div>
+            }
+
+            <EditForm Model="_loginModel" OnValidSubmit="HandleLogin" style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="input-group">
+                    <label style="font-weight: 900; font-size: 0.7rem; margin-bottom: 8px; display: block;">IDENTIFIER (EMAIL/USER)</label>
+                    <input @bind="_identifier" class="custom-input" style="width: 100%;" placeholder="ENTRY_ID" />
                 </div>
 
-                <div class="input-group mb-4">
-                    <label style="font-weight: 900; font-size: 0.7rem;">PASSWORD</label>
-                    <input @bind="_loginModel.Password" type="password" class="custom-input" style="width: 100%;" />
+                <div class="input-group">
+                    <label style="font-weight: 900; font-size: 0.7rem; margin-bottom: 8px; display: block;">PASSWORD</label>
+                    <input @bind="_loginModel.Password" type="password" class="custom-input" style="width: 100%;" placeholder="••••••••" />
                 </div>
 
-                <button type="submit" class="btn-black" style="width: 100%; padding: 15px;">INITIALIZE_SESSION</button>
+                <button type="submit" class="btn-black" style="width: 100%; padding: 18px; margin-top: 10px;" disabled="@_isProcessing">
+                    @(_isProcessing ? "SYNCHRONIZING..." : "INITIALIZE_SESSION")
+                </button>
             </EditForm>
             
-            <div style="text-align: center; margin-top: 20px;">
-                <a href="/register" style="font-size: 0.7rem; color: #888; text-decoration: none;">REQUEST_NEW_ACCOUNT</a>
+            <div style="text-align: center;">
+                <a href="/register" style="font-size: 0.7rem; color: #888; text-decoration: none; font-weight: bold;">REQUEST_NEW_ACCOUNT</a>
             </div>
         </div>
     </div>
@@ -38,21 +48,40 @@
 
 @code {
     private LoginUserDto _loginModel = new();
-    private string _identifier;
+    private string _identifier = "";
+    private string? _userErrorMessage;
+    private bool _isProcessing;
 
     private async Task HandleLogin()
     {
-        // Simple logic to determine if input is email or username
-        if (_identifier.Contains("@")) _loginModel.Email = _identifier;
-        else _loginModel.Username = _identifier;
+        _isProcessing = true;
+        _userErrorMessage = null;
 
-        var response = await Http.PostAsJsonAsync("login", _loginModel);
-        if (response.IsSuccessStatusCode)
+        try 
         {
-            var result = await response.Content.ReadFromJsonAsync<TokenDto>();
-            await LocalStorage.SetItemAsync("authToken", result.AccessToken);
-            ((CustomAuthStateProvider)AuthStateProvider).NotifyUserAuthentication(result.AccessToken);
-            Nav.NavigateTo("/");
+            if (_identifier.Contains("@")) _loginModel.Email = _identifier;
+            else _loginModel.Username = _identifier;
+
+            var response = await Http.PostAsJsonAsync("login", _loginModel);
+            if (response.IsSuccessStatusCode)
+            {
+                var result = await response.Content.ReadFromJsonAsync<TokenDto>();
+                await LocalStorage.SetItemAsync("authToken", result!.AccessToken);
+                ((CustomAuthStateProvider)AuthStateProvider).NotifyUserAuthentication(result.AccessToken);
+                Nav.NavigateTo("/");
+            }
+            else
+            {
+                _userErrorMessage = "Invalid credentials. Access to the central database was rejected.";
+            }
+        }
+        catch 
+        {
+            _userErrorMessage = "Critical connection error. Ensure your link to the terminal is stable.";
+        }
+        finally 
+        {
+            _isProcessing = false;
         }
     }
 }

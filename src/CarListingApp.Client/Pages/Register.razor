@@ -1,128 +1,94 @@
 ﻿@page "/register"
+@using CarListingApp.Services.DTOs.User
+@using System.ComponentModel.DataAnnotations
 @inject HttpClient Http
 @inject NavigationManager Nav
 
-<div style="max-width: 500px; margin: 0 auto;">
-    <div class="heavy-card" style="flex-direction: column;">
-        <div class="card-content" style="border-right: none; border-bottom: var(--border-weight) solid var(--black);">
-            <h2 style="font-weight: 900; text-transform: uppercase; margin-bottom: 1.5rem;">Create Account</h2>
+<div style="max-width: 500px; margin: 3rem auto;">
+    <div class="heavy-card" style="flex-direction: column; background: white;">
+        <div style="padding: 40px;">
+            <h2 style="font-weight: 900; text-transform: uppercase; margin-bottom: 2rem; letter-spacing: -1px;">CREATE_NEW_PROTOCOL</h2>
             
-            @if (!string.IsNullOrEmpty(_error))
+            @if (!string.IsNullOrEmpty(_userErrorMessage))
             {
-                <div style="color: red; border: 2px solid red; padding: 10px; margin-bottom: 1rem; font-size: 0.75rem; font-weight: bold;">
-                    REGISTRATION_ERROR: @_error.ToUpper()
+                <div style="color: #ff0055; border: 2px solid #ff0055; padding: 15px; margin-bottom: 2rem; font-size: 0.75rem; font-weight: 900; background: #fff5f7;">
+                    [REGISTRATION_REJECTED]: @_userErrorMessage.ToUpper()
                 </div>
             }
 
-            @* ROLE SELECTION *@
-            <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; font-weight: bold; font-size: 0.7rem; margin-bottom: 8px;">ACCOUNT TYPE</label>
-                <div style="display: flex; gap: 20px;">
-                    <label class="radio-container">
-                        <input type="radio" name="role" value="User" checked="@(_regModel.RoleName == "User")" @onchange="@(() => _regModel.RoleName = "User")" />
-                        <span class="custom-radio"></span> INDIVIDUAL
-                    </label>
-                    <label class="radio-container">
-                        <input type="radio" name="role" value="Dealer" checked="@(_regModel.RoleName == "Dealer")" @onchange="@(() => _regModel.RoleName = "Dealer")" />
-                        <span class="custom-radio"></span> DEALER
-                    </label>
+            <EditForm Model="_regModel" OnValidSubmit="HandleRegister" style="display: flex; flex-direction: column; gap: 20px;">
+                <DataAnnotationsValidator />
+
+                @* ROLE SELECTION *@
+                <div>
+                    <label style="display: block; font-weight: 900; font-size: 0.7rem; margin-bottom: 12px;">ACCOUNT_TYPE</label>
+                    <div style="display: flex; gap: 30px;">
+                        <label class="radio-container">
+                            <input type="radio" name="role" value="User" checked="@(_regModel.RoleName == "User")" @onchange="@(() => _regModel.RoleName = "User")" />
+                            <span class="custom-radio"></span> INDIVIDUAL
+                        </label>
+                        <label class="radio-container">
+                            <input type="radio" name="role" value="Dealer" checked="@(_regModel.RoleName == "Dealer")" @onchange="@(() => _regModel.RoleName = "Dealer")" />
+                            <span class="custom-radio"></span> DEALER
+                        </label>
+                    </div>
                 </div>
-            </div>
 
-            <div style="margin-bottom: 1rem;">
-                <label style="display: block; font-weight: bold; font-size: 0.7rem; margin-bottom: 5px;">USERNAME</label>
-                <input @bind="_regModel.Username" class="custom-input" placeholder="User123..." />
-            </div>
+                <div class="input-group">
+                    <label style="display: block; font-weight: 900; font-size: 0.7rem; margin-bottom: 8px;">USERNAME</label>
+                    <input @bind="_regModel.Username" class="custom-input" placeholder="ALPHA_USER_01" />
+                    <ValidationMessage For="@(() => _regModel.Username)" class="user-error" />
+                </div>
 
-            <div style="margin-bottom: 1rem;">
-                <label style="display: block; font-weight: bold; font-size: 0.7rem; margin-bottom: 5px;">EMAIL ADDRESS</label>
-                <input @bind="_regModel.Email" type="email" class="custom-input" placeholder="name@example.com" />
-            </div>
+                <div class="input-group">
+                    <label style="display: block; font-weight: 900; font-size: 0.7rem; margin-bottom: 8px;">EMAIL_ADDRESS</label>
+                    <input @bind="_regModel.Email" type="email" class="custom-input" placeholder="user@domain.com" />
+                    <ValidationMessage For="@(() => _regModel.Email)" class="user-error" />
+                </div>
 
-            <div style="margin-bottom: 1.5rem;">
-                <label style="display: block; font-weight: bold; font-size: 0.7rem; margin-bottom: 5px;">PASSWORD</label>
-                <input @bind="_regModel.Password" type="password" class="custom-input" placeholder="********" />
-            </div>
+                <div class="input-group">
+                    <label style="display: block; font-weight: 900; font-size: 0.7rem; margin-bottom: 8px;">SECURITY_KEY (PASSWORD)</label>
+                    <input @bind="_regModel.Password" type="password" class="custom-input" placeholder="••••••••" />
+                    <ValidationMessage For="@(() => _regModel.Password)" class="user-error" />
+                </div>
 
-            <button @onclick="HandleRegister" class="btn-black">Register User</button>
+                <button type="submit" class="btn-black" style="margin-top: 10px; padding: 18px;">EXECUTE_REGISTRATION</button>
+            </EditForm>
         </div>
-        <div class="card-action" style="background: #f9f9f9; width: 100%; padding: 1rem;">
-            <p style="font-size: 0.7rem; margin: 0;">Already have an account? <a href="login" style="color: black; font-weight: bold;">Sign In</a></p>
+
+        <div style="background: #fafafa; border-top: 2px solid black; padding: 20px; text-align: center;">
+            <p style="font-size: 0.7rem; margin: 0; font-weight: 700;">ALREADY REGISTERED? <a href="login" style="color: #ff00ff; text-decoration: none;">SIGN_IN</a></p>
         </div>
     </div>
 </div>
 
 <style>
-    .custom-input {
-        width: 100%;
-        padding: 12px;
-        border: var(--border-weight) solid var(--black);
-        font-family: inherit;
-        outline: none;
-    }
-
-    /* Industrial Radio Styling */
-    .radio-container {
-        display: flex;
-        align-items: center;
-        cursor: pointer;
-        font-size: 0.8rem;
-        font-weight: 800;
-        user-select: none;
-    }
-
-    .radio-container input {
-        position: absolute;
-        opacity: 0;
-        cursor: pointer;
-    }
-
-    .custom-radio {
-        height: 18px;
-        width: 18px;
-        background-color: #fff;
-        border: 2px solid black;
-        margin-right: 8px;
-        display: inline-block;
-        position: relative;
-    }
-
-    .radio-container input:checked ~ .custom-radio {
-        background-color: magenta;
-    }
-
-    .radio-container input:checked ~ .custom-radio:after {
-        content: "";
-        position: absolute;
-        left: 4px;
-        top: 4px;
-        width: 6px;
-        height: 6px;
-        background: white;
-    }
+    .user-error { color: #ff0055; font-size: 0.65rem; font-weight: 900; margin-top: 5px; display: block; text-transform: uppercase; }
 </style>
 
 @code {
     private RegisterDto _regModel = new() { RoleName = "User" };
-    private string? _error;
+    private string? _userErrorMessage;
 
     private async Task HandleRegister()
     {
-        var response = await Http.PostAsJsonAsync("users", _regModel);
-        if (response.IsSuccessStatusCode)
+        _userErrorMessage = null;
+        try 
         {
-            Nav.NavigateTo("/login");
+            var response = await Http.PostAsJsonAsync("users", _regModel);
+            if (response.IsSuccessStatusCode) Nav.NavigateTo("/login");
+            else _userErrorMessage = "Information rejected. Possible duplicate identifier or weak password.";
         }
-        else
+        catch 
         {
-            _error = await response.Content.ReadAsStringAsync();
+            _userErrorMessage = "Terminal failure. Unable to reach registration server.";
         }
     }
 
     public class RegisterDto {
-        public string Username { get; set; } = "";
-        public string Email { get; set; } = "";
-        public string Password { get; set; } = "";
+        [Required] public string Username { get; set; } = "";
+        [Required, EmailAddress] public string Email { get; set; } = "";
+        [Required, MinLength(6)] public string Password { get; set; } = "";
         public string RoleName { get; set; } = "";
     }
 }
