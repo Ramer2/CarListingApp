@@ -6,7 +6,7 @@ namespace CarListingApp.API.Controllers;
 
 [ApiController]
 [Route("cars")]
-public class CarController
+public class CarController : ControllerBase
 {
     private readonly ICarService _carService;
 

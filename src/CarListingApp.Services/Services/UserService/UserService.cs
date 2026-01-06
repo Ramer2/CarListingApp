@@ -112,6 +112,53 @@ public class UserService : IUserService
         };
     }
 
+    public async Task<UserDto> GetUserByEmail(string email, CancellationToken cancellationToken)
+    {
+        if (string.IsNullOrEmpty(email))
+            throw new ArgumentException("Email must be valid.");
+        
+        var user = await _context.Users
+            .Where(u => u.Email.Equals(email))
+            .Include(u => u.RoleNavigation)
+            .Include(u => u.Cars)
+            .ThenInclude(c => c.StatusNavigation)
+            .FirstOrDefaultAsync(cancellationToken);
+
+        if (user == null)
+            throw new KeyNotFoundException($"User with email {email} not found.");
+        
+        var listedCars = new List<CarDto>();
+        foreach (var car in user.Cars)
+        {
+            listedCars.Add(new CarDto
+            {
+                Id = car.Id,
+                Price = car.Price,
+                Brand = car.Brand,
+                Model = car.Model,
+                Color = car.Color,
+                Year = car.Year,
+                Vin = car.Vin,
+                EngineDisplacement = car.EngineDisplacement,
+                EnginePower = car.EnginePower,
+                Mileage = car.Mileage,
+                Status = car.StatusNavigation.StatusName,
+                Description = car.Description,
+            });
+        }
+
+        return new UserDto
+        {
+            Id = user.Id,
+            Username = user.Username,
+            Email = user.Email,
+            CreatedAt = user.CreatedAt.ToString(CultureInfo.InvariantCulture),
+            IsBlocked = user.IsBlocked,
+            Role = user.RoleNavigation.RoleName,
+            ListedCars = listedCars,
+        };
+    }
+
     public async Task<UserDto> CreateUser(CreateUserDto createUserDto, CancellationToken cancellationToken)
     {
         var emailCheck = await _context.Users.FirstOrDefaultAsync(u => u.Email.Equals(createUserDto.Email), cancellationToken);
@@ -180,13 +227,14 @@ public class UserService : IUserService
                 throw new ArgumentException("An account with this username already exists.");
         }
 
-        var role = new Role();
+        Role? role;
         if (!user.RoleNavigation.RoleName.Equals(updateUserDto.RoleName))
         {
             role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName.Equals(updateUserDto.RoleName), cancellationToken);
             if (role == null)
                 throw new KeyNotFoundException($"No role with name {updateUserDto.RoleName} found.");
         }
+        else role = user.RoleNavigation;
         
         user.Email = updateUserDto.Email;
         user.Username = updateUserDto.Username;

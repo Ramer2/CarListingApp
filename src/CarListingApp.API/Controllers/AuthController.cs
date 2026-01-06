@@ -9,7 +9,7 @@ using Microsoft.EntityFrameworkCore;
 namespace CarListingApp.API.Controllers;
 
 [ApiController]
-public class AuthController
+public class AuthController : ControllerBase
 {
     private readonly ITokenService _tokenService;
     private readonly PasswordHasher<User>  _passwordHasher = new();

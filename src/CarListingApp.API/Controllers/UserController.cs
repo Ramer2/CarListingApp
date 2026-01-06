@@ -1,4 +1,5 @@
-﻿using CarListingApp.Services.DTOs.User;
+﻿using System.Security.Claims;
+using CarListingApp.Services.DTOs.User;
 using CarListingApp.Services.Services.UserService;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -7,7 +8,7 @@ namespace CarListingApp.API.Controllers;
 
 [ApiController]
 [Route("users")]
-public class UserController
+public class UserController : ControllerBase
 {
     private readonly IUserService _userService;
 
@@ -17,7 +18,7 @@ public class UserController
     }
 
     [Authorize(Roles = "Admin")]
-    [HttpGet]
+    [HttpGet("")]
     public async Task<IResult> GetAll(CancellationToken cancellationToken)
     {
         try
@@ -29,13 +30,33 @@ public class UserController
         }
     }
 
-    [HttpGet]
-    [Route("{id}")]
+    [Authorize(Roles = "Admin, User, Dealer")]
+    [HttpGet("{id}")]
     public async Task<IResult> GetUserById(int? id, CancellationToken cancellationToken)
     {
         try
         {
-            return Results.Ok(await _userService.GetUserById(id, cancellationToken));
+            if (User.IsInRole("Admin"))
+            {
+                return Results.Ok(await _userService.GetUserById(id, cancellationToken));
+            }
+            else
+            {
+                var email = User.FindFirst(ClaimTypes.Email); 
+                if (email == null)
+                    return Results.Problem("Invalid credentials.");
+                
+                var user = await _userService.GetUserByEmail(email.Value, cancellationToken);
+                
+                if (user.Id != id)
+                    return Results.Forbid();
+                
+                return Results.Ok(user);
+            }
+        }
+        catch (AccessViolationException)
+        {
+            return Results.Forbid();
         }
         catch (KeyNotFoundException ex)
         {
@@ -50,12 +71,19 @@ public class UserController
             return Results.Problem(ex.Message);
         }
     }
-
-    [HttpPost]
+    
+    [HttpPost("")]
     public async Task<IResult> CreateUser([FromBody] CreateUserDto createUserDto, CancellationToken cancellationToken)
     {
         try
         {
+            // only admins can create other admins
+            if (User.Identity?.IsAuthenticated == true)
+            {
+                if (!User.IsInRole("Admin") && createUserDto.RoleName.Equals("Admin"))
+                    return Results.Forbid();
+            }
+            
             var user = await _userService.CreateUser(createUserDto, cancellationToken);
             return Results.Ok(user);
         }
@@ -73,14 +101,30 @@ public class UserController
         }
     }
 
-    [HttpPut]
-    [Route("{id}")]
+    [Authorize(Roles = "Admin, User, Dealer")]
+    [HttpPut("{id}")]
     public async Task<IResult> UpdateUser([FromBody] CreateUserDto createUserDto, int id, CancellationToken cancellationToken)
     {
         try
         {
-            var user = await _userService.UpdateUser(createUserDto, id, cancellationToken);
-            return Results.Ok(user);
+            if (!User.IsInRole("Admin"))
+            {
+                var email = User.FindFirst(ClaimTypes.Email); 
+                if (email == null)
+                    return Results.Problem("Invalid credentials.");
+                
+                var user = await _userService.GetUserByEmail(email.Value, cancellationToken);
+                
+                // if different user
+                // or tries to change role
+                // or tries to change blocked status
+                if (user.Id != id 
+                    || !user.Role.Equals(createUserDto.RoleName) 
+                    || user.IsBlocked != createUserDto.IsBlocked)
+                    return Results.Forbid();
+            }
+            
+            return Results.Ok(await _userService.UpdateUser(createUserDto, id, cancellationToken));
         }
         catch (ArgumentException ex)
         {
@@ -96,12 +140,25 @@ public class UserController
         }
     }
 
-    [HttpDelete]
-    [Route("{id}")]
+    [Authorize(Roles = "Admin, User, Dealer")]
+    [HttpDelete("{id}")]
     public async Task<IResult> DeleteUser(int id, CancellationToken cancellationToken)
     {
         try
         {
+            if (!User.IsInRole("Admin"))
+            {
+                var email = User.FindFirst(ClaimTypes.Email); 
+                if (email == null)
+                    return Results.Problem("Invalid credentials.");
+                
+                var user = await _userService.GetUserByEmail(email.Value, cancellationToken);
+                
+                // if different user
+                if (user.Id != id)
+                    return Results.Forbid();
+            }
+            
             await _userService.DeleteUser(id, cancellationToken);
             return Results.NoContent();
         }
