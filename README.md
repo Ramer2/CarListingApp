@@ -27,3 +27,6 @@ Step by step guide:
 2. Go to Program.cs in CarListingApp.API
 3. In line 31 (builder.Services.AddDbContext...) change options.UseSqlLite to the corresponding method
 4. If needed, correct the NuGet packages installed in the project
+
+### Use of AI
+Mostly AI was used for consulting purposes except for the Fronten part of the application. Frontend is the only place where AI was used to directly write the code.
