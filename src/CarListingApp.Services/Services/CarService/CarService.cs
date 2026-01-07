@@ -165,7 +165,7 @@ public class CarService : ICarService
         if (car == null)
             throw new ArgumentException("Car not found.");
 
-        if (car.SellerNavigation.Id != seller.Id)
+        if (car.SellerNavigation.Id != seller.Id && !seller.RoleNavigation.RoleName.Equals("Admin"))
             throw new ArgumentException("Seller is not allowed to update this car.");
 
         if (seller.RoleNavigation.RoleName == "User")

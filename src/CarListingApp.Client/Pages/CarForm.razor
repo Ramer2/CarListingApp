@@ -55,6 +55,12 @@
                         <InputNumber @bind-Value="_carModel.EnginePower" class="custom-input" />
                     </div>
                 </div>
+                @* MILEAGE LOG ADDED TO FORM *@
+                <div class="input-group" style="margin-top: 20px; width: 32%;">
+                    <label style="font-size: 0.65rem; font-weight: 900; margin-bottom: 5px;">MILEAGE (KM)</label>
+                    <InputNumber @bind-Value="_carModel.Mileage" class="custom-input" />
+                    <ValidationMessage For="@(() => _carModel.Mileage)" class="user-error" />
+                </div>
             </div>
 
             <div class="input-group">
@@ -97,6 +103,11 @@
         if (_carModel.Year < 1900 || _carModel.Year > 2026)
         {
             _errorMessage = "VALIDATION_ERROR: YEAR_OUT_OF_RANGE";
+            return false;
+        }
+        if (_carModel.Mileage < 0)
+        {
+            _errorMessage = "VALIDATION_ERROR: MILEAGE_CANNOT_BE_NEGATIVE";
             return false;
         }
         return true;

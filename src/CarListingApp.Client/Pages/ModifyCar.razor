@@ -53,7 +53,7 @@
                     </div>
                 </div>
 
-                @* NEW TECHNICAL ROW: MILEAGE & VIN *@
+                @* TECHNICAL ROW: MILEAGE & VIN *@
                 <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 30px;">
                     <div class="input-group">
                         <label class="industrial-label">MILEAGE_LOG (KM)</label>
@@ -150,6 +150,12 @@
         if (_carModel.Year < 1900 || _carModel.Year > DateTime.Now.Year + 1)
         {
             _statusMessage = "VALIDATION_FAULT: INVALID_MANUFACTURE_YEAR";
+            return false;
+        }
+
+        if (_carModel.Mileage < 0)
+        {
+            _statusMessage = "VALIDATION_FAULT: MILEAGE_CANNOT_BE_NEGATIVE";
             return false;
         }
 
