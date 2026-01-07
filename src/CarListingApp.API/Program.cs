@@ -5,6 +5,7 @@ using CarListingApp.Services.Helpers.JwtOptions;
 using CarListingApp.Services.Helpers.Middleware;
 using CarListingApp.Services.Services.CarService;
 using CarListingApp.Services.Services.Favorite;
+using CarListingApp.Services.Services.ServiceRecord;
 using CarListingApp.Services.Services.TokenService;
 using CarListingApp.Services.Services.UserService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -50,6 +51,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICarService, CarService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
 builder.Services.AddScoped<IFavoritesService, FavoritesService>();
+builder.Services.AddScoped<IServiceRecordsService, ServiceRecordsService>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();

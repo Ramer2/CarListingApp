@@ -17,7 +17,7 @@ public class CreateCarDto
     public string? Color { get; set; }
 
     [Required]
-    [Range(1, 3000)]
+    [Range(1900, 2029)]
     public int Year { get; set; }
     
     public string? Vin { get; set; }

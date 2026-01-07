@@ -62,9 +62,9 @@ CREATE TABLE UserFavorites (
 );
 
 CREATE TABLE ServiceRecord (
-    Id integer NOT NULL CONSTRAINT ServiceRecord_pk PRIMARY KEY,
+    Id integer NOT NULL CONSTRAINT ServiceRecord_pk PRIMARY KEY AUTOINCREMENT,
     MileageAtService integer NOT NULL,
-    ServiceDate datetime NOT NULL,
+    ServiceDate datetime NOT NULL DEFAULT CURRENT_TIMESTAMP,
     Grade real NOT NULL,
     Car integer NOT NULL,
     CONSTRAINT ServiceRecord_Car FOREIGN KEY (Car)

@@ -1,41 +1,43 @@
 ﻿using System.Security.Claims;
-using CarListingApp.Services.DTOs.Car;
-using CarListingApp.Services.Services.CarService;
+using CarListingApp.Services.DTOs.ServiceRecord;
+using CarListingApp.Services.Services.ServiceRecord;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace CarListingApp.API.Controllers;
 
 [ApiController]
-[Route("cars")]
-public class CarController : ControllerBase
+[Route("cars/{carId:int}/service-records")]
+public class ServiceRecordController : ControllerBase
 {
-    private readonly ICarService _carService;
+    private readonly IServiceRecordsService _serviceRecordService;
 
-    public CarController(ICarService carService)
+    public ServiceRecordController(IServiceRecordsService serviceRecordService)
     {
-        _carService = carService;
+        _serviceRecordService = serviceRecordService;
     }
-    
+
     [HttpGet("")]
-    public async Task<IResult> GetAll(CancellationToken cancellationToken)
+    public async Task<IResult> GetAll(int carId, CancellationToken cancellationToken)
     {
         try
-        { 
-            return Results.Ok(await _carService.GetAll(cancellationToken));
+        {
+            var records = await _serviceRecordService.GetAll(carId, cancellationToken);
+            return Results.Ok(records);
         }
         catch (Exception ex)
         {
             return Results.Problem(ex.Message);
         }
     }
-    
-    [HttpGet("{id}")]
-    public async Task<IResult> GetById(int id, CancellationToken cancellationToken)
+
+    [HttpGet("{id:int}")]
+    public async Task<IResult> GetById(int carId, int id, CancellationToken cancellationToken)
     {
         try
         {
-            return Results.Ok(await _carService.GetById(id, cancellationToken));
+            var record = await _serviceRecordService.GetById(carId, id, cancellationToken);
+            return Results.Ok(record);
         }
         catch (KeyNotFoundException ex)
         {
@@ -53,15 +55,16 @@ public class CarController : ControllerBase
 
     [Authorize(Roles = "Admin, User, Dealer")]
     [HttpPost("")]
-    public async Task<IResult> CreateCar([FromBody] CreateCarDto createCarDto, CancellationToken cancellationToken)
+    public async Task<IResult> CreateServiceRecord(int carId, [FromBody] CreateServiceRecordDto dto, CancellationToken cancellationToken)
     {
         try
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (email == null)
                 return Results.Unauthorized();
-                
-            return Results.Ok(await _carService.CreateCar(createCarDto, email, cancellationToken));
+
+            var record = await _serviceRecordService.CreateServiceRecord(carId, dto, email, cancellationToken);
+            return Results.Ok(record);
         }
         catch (KeyNotFoundException ex)
         {
@@ -71,23 +74,28 @@ public class CarController : ControllerBase
         {
             return Results.BadRequest(ex.Message);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Results.Forbid();
+        }
         catch (Exception ex)
         {
             return Results.Problem(ex.Message);
         }
     }
-    
+
     [Authorize(Roles = "Admin, User, Dealer")]
-    [HttpPut("{id}")]
-    public async Task<IResult> UpdateCar([FromBody] CreateCarDto createCarDto, int id, CancellationToken cancellationToken)
+    [HttpPut("{id:int}")]
+    public async Task<IResult> UpdateServiceRecord(int carId, int id, [FromBody] CreateServiceRecordDto dto, CancellationToken cancellationToken)
     {
         try
         {
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (email == null)
                 return Results.Unauthorized();
-                
-            return Results.Ok(await _carService.UpdateCar(createCarDto, id, email, cancellationToken));
+
+            var record = await _serviceRecordService.UpdateServiceRecord(carId, id, dto, email, cancellationToken);
+            return Results.Ok(record);
         }
         catch (KeyNotFoundException ex)
         {
@@ -97,30 +105,28 @@ public class CarController : ControllerBase
         {
             return Results.BadRequest(ex.Message);
         }
+        catch (UnauthorizedAccessException ex)
+        {
+            return Results.Forbid();
+        }
         catch (Exception ex)
         {
             return Results.Problem(ex.Message);
         }
     }
-    
+
     [Authorize(Roles = "Admin, User, Dealer")]
-    [HttpDelete("{id}")]
-    public async Task<IResult> DeleteCar(int id, CancellationToken cancellationToken)
+    [HttpDelete("{id:int}")]
+    public async Task<IResult> DeleteServiceRecord(int carId, int id, CancellationToken cancellationToken)
     {
         try
         {
             var isAdmin = User.IsInRole("Admin");
-
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
             if (!isAdmin && email == null)
                 return Results.Unauthorized();
 
-            await _carService.DeleteCar(
-                id,
-                email,
-                isAdmin,
-                cancellationToken);
-
+            await _serviceRecordService.DeleteServiceRecord(carId, id, email, isAdmin, cancellationToken);
             return Results.NoContent();
         }
         catch (KeyNotFoundException ex)

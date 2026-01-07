@@ -2,6 +2,7 @@
 @using System.Security.Claims
 @using CarListingApp.Services.DTOs.Car
 @using CarListingApp.Services.DTOs.User
+@using CarListingApp.Services.DTOs.ServiceRecord
 @using Microsoft.AspNetCore.Components.Authorization
 @inject HttpClient Http
 @inject NavigationManager Nav
@@ -44,7 +45,6 @@
                         <span class="year-stamp">MODEL_YEAR: @_car.Year</span>
                     </div>
                     
-                    @* PRICE & FAVORITE TOGGLE *@
                     <div class="price-container">
                         <div class="price-display">
                             <span class="currency">$</span>@_car.Price.ToString("N0")
@@ -88,6 +88,58 @@
                     </p>
                 </div>
 
+                @* --- SERVICE RECORDS SECTION --- *@
+                <div class="service-section">
+                    <div class="section-header">
+                        <h3 class="fw-900">MAINTENANCE_PROTOCOL_LOGS</h3>
+                        <AuthorizeView Roles="Admin, User, Dealer">
+                            <button class="btn-ctrl btn-add-record" @onclick="OpenCreateRecord">ADD_NEW_RECORD</button>
+                        </AuthorizeView>
+                    </div>
+
+                    <div class="table-responsive mt-3">
+                        <table class="industrial-table">
+                            <thead>
+                                <tr>
+                                    <th>DATE_STAMP</th>
+                                    <th>MILEAGE (KM)</th>
+                                    <th>GRADE</th>
+                                    <th>ACTIONS</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                @if (_serviceRecords == null || !_serviceRecords.Any())
+                                {
+                                    <tr>
+                                        <td colspan="4" class="text-center py-4 text-muted">NO_SERVICE_HISTORY_RECOVERED</td>
+                                    </tr>
+                                }
+                                else
+                                {
+                                    @foreach (var record in _serviceRecords)
+                                    {
+                                        <tr>
+                                            <td class="fw-bold">@record.ServiceDate</td>
+                                            <td>@record.MileageAtService.ToString("N0")</td>
+                                            <td>
+                                                <span class="grade-pill">@record.Grade.ToString("F1")</span>
+                                            </td>
+                                            <td>
+                                                <AuthorizeView Roles="Admin, User, Dealer">
+                                                    <div class="d-flex gap-2">
+                                                        <button class="btn-mini btn-edit" @onclick="() => OpenEditRecord(record)"><i class="bi bi-pencil"></i></button>
+                                                        <button class="btn-mini btn-delete" @onclick='() => RequestConfirmation("PURGE SERVICE RECORD?", () => DeleteRecord(record.Id))'><i class="bi bi-trash"></i></button>
+                                                    </div>
+                                                </AuthorizeView>
+                                            </td>
+                                        </tr>
+                                    }
+                                }
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
                 <AuthorizeView>
                     <Authorized>
                         @if (IsOwnerOrAdmin(context.User))
@@ -112,6 +164,37 @@
         </div>
     }
 </div>
+
+@* SERVICE RECORD MODAL *@
+@if (_showRecordModal)
+{
+    <div class="modal-backdrop">
+        <div class="modal-box" style="width: 500px;">
+            <div class="modal-banner" style="background: black;">@(_editingRecordId == null ? "NEW_SERVICE_ENTRY" : "MODIFY_SERVICE_ENTRY")</div>
+            <div class="modal-body">
+                <EditForm Model="_recordModel" OnValidSubmit="HandleRecordSubmit">
+                    <DataAnnotationsValidator />
+                    <div class="mb-3">
+                        <label class="industrial-label">SERVICE_DATE</label>
+                        <InputDate @bind-Value="_recordModel.ServiceDate" class="custom-input" />
+                    </div>
+                    <div class="mb-3">
+                        <label class="industrial-label">MILEAGE_AT_SERVICE</label>
+                        <InputNumber @bind-Value="_recordModel.MileageAtService" class="custom-input" />
+                    </div>
+                    <div class="mb-4">
+                        <label class="industrial-label">CONDITION_GRADE (0-5)</label>
+                        <InputNumber @bind-Value="_recordModel.Grade" step="0.1" class="custom-input" />
+                    </div>
+                    <div class="modal-footer p-0">
+                        <button type="submit" class="btn-black">@(_isSubmittingRecord ? "SYNCING..." : "COMMIT_ENTRY")</button>
+                        <button type="button" class="btn-outline" @onclick="() => _showRecordModal = false">CANCEL</button>
+                    </div>
+                </EditForm>
+            </div>
+        </div>
+    </div>
+}
 
 @* CUSTOM MODAL SYSTEM *@
 @if (_showConfirmModal)
@@ -138,111 +221,83 @@
         --industrial-red: #ff0055;
     }
 
+    /* Existing Styles ... */
     .details-container { max-width: 1100px; margin: 3rem auto; padding: 0 20px; font-family: 'Inter', sans-serif; }
-
-    /* LAYOUT ENGINE */
-    .industrial-card-layout {
-        display: grid;
-        grid-template-columns: 350px 1fr;
-        border: 4px solid var(--industrial-black);
-        background: white;
-        min-height: 600px;
-    }
-
-    /* SIDEBAR */
-    .visual-sidebar {
-        background: var(--industrial-magenta);
-        display: flex; flex-direction: column;
-        align-items: center; justify-content: center;
-        position: relative; padding: 40px; color: white;
-        border-right: 4px solid var(--industrial-black);
-    }
-
-    .status-badge {
-        position: absolute; top: 0; left: 0;
-        background: black; color: white;
-        padding: 8px 15px; font-weight: 900; font-size: 0.75rem;
-    }
-
+    .industrial-card-layout { display: grid; grid-template-columns: 350px 1fr; border: 4px solid var(--industrial-black); background: white; min-height: 600px; }
+    .visual-sidebar { background: var(--industrial-magenta); display: flex; flex-direction: column; align-items: center; justify-content: center; position: relative; padding: 40px; color: white; border-right: 4px solid var(--industrial-black); }
+    .status-badge { position: absolute; top: 0; left: 0; background: black; color: white; padding: 8px 15px; font-weight: 900; font-size: 0.75rem; }
     .sidebar-icon { font-size: 8rem; filter: drop-shadow(5px 5px 0px rgba(0,0,0,0.2)); }
     .vin-tag { margin-top: 20px; font-size: 0.65rem; font-weight: 900; background: rgba(0,0,0,0.1); padding: 5px 10px; }
-
-    /* CONTENT BODY */
     .content-body { padding: 50px; display: flex; flex-direction: column; gap: 30px; }
-
-    .header-section {
-        display: flex; justify-content: space-between;
-        align-items: flex-start; border-bottom: 2px solid #eee;
-        padding-bottom: 20px;
-    }
-
+    .header-section { display: flex; justify-content: space-between; align-items: flex-start; border-bottom: 2px solid #eee; padding-bottom: 20px; }
     .brand-model { font-weight: 900; font-size: 2.5rem; letter-spacing: -2px; line-height: 1; margin: 0; }
     .year-stamp { font-size: 0.75rem; font-weight: 900; color: #888; }
-    
     .price-container { display: flex; align-items: center; gap: 20px; }
     .price-display { font-size: 3rem; font-weight: 900; letter-spacing: -2px; color: var(--industrial-black); }
     .currency { font-size: 1.5rem; vertical-align: top; margin-right: 5px; }
-
-    .btn-fav-large {
-        background: white; border: 3px solid black;
-        width: 60px; height: 60px; display: flex;
-        align-items: center; justify-content: center;
-        font-size: 1.5rem; cursor: pointer; transition: 0.1s;
-    }
+    .btn-fav-large { background: white; border: 3px solid black; width: 60px; height: 60px; display: flex; align-items: center; justify-content: center; font-size: 1.5rem; cursor: pointer; transition: 0.1s; }
     .btn-fav-large:hover { color: var(--industrial-magenta); border-color: var(--industrial-magenta); }
     .btn-fav-large.active { background: black; color: var(--industrial-magenta); border-color: black; }
-
-    /* SPECS GRID */
     .specs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
     .spec-tile { border: 2px solid var(--industrial-black); padding: 15px; }
     .spec-tile label { display: block; font-size: 0.65rem; font-weight: 900; color: #888; margin-bottom: 5px; }
     .spec-tile .value { font-weight: 900; font-size: 1.1rem; }
-
-    /* DESCRIPTION */
     .desc-container { background: #fafafa; padding: 25px; border-left: 5px solid var(--industrial-black); }
     .desc-label { font-size: 0.7rem; font-weight: 900; margin-bottom: 10px; display: block; }
     .desc-text { line-height: 1.6; font-size: 0.95rem; margin: 0; }
 
-    /* CONTROLS */
+    /* SERVICE TABLE STYLES */
+    .service-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid #eee; }
+    .section-header { display: flex; justify-content: space-between; align-items: center; }
+    .industrial-table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.85rem; }
+    .industrial-table th { background: #000; color: #fff; text-align: left; padding: 12px; font-weight: 900; letter-spacing: 1px; }
+    .industrial-table td { padding: 12px; border-bottom: 1px solid #eee; }
+    .grade-pill { background: #eee; padding: 2px 8px; font-weight: 900; border-radius: 4px; border: 1px solid #ccc; }
+    .btn-mini { background: white; border: 1px solid black; padding: 4px 8px; cursor: pointer; transition: 0.1s; }
+    .btn-mini:hover { background: #000; color: #fff; }
+    .btn-add-record { border-color: var(--industrial-magenta); color: var(--industrial-magenta); max-width: 180px; }
+    .btn-add-record:hover { background: var(--industrial-magenta); color: #fff; }
+
+    /* Form Elements for Modal */
+    .industrial-label { display: block; font-size: 0.7rem; font-weight: 900; margin-bottom: 8px; color: #666; }
+    .custom-input { width: 100%; padding: 12px; border: 2px solid black; font-weight: 700; }
+
+    /* Existing Button/Modal Styles ... */
     .control-panel { margin-top: 20px; border: 2px dashed #ccc; padding: 20px; }
     .panel-header { font-size: 0.7rem; font-weight: 900; margin-bottom: 15px; color: #aaa; }
     .panel-actions { display: flex; gap: 10px; }
-
-    .btn-ctrl {
-        flex: 1; padding: 12px; font-weight: 900; font-size: 0.75rem;
-        border: 2px solid var(--industrial-black); background: white;
-        cursor: pointer; transition: all 0.1s;
-    }
+    .btn-ctrl { flex: 1; padding: 12px; font-weight: 900; font-size: 0.75rem; border: 2px solid var(--industrial-black); background: white; cursor: pointer; transition: all 0.1s; }
     .btn-edit:hover { background: #eee; }
     .btn-sold:hover { background: var(--industrial-green); }
     .btn-delete:hover { background: var(--industrial-red); color: white; }
-
-    /* MODAL */
     .modal-backdrop { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.8); z-index: 9999; display: flex; align-items: center; justify-content: center; }
     .modal-box { background: white; width: 400px; border: 4px solid black; }
     .modal-banner { background: var(--industrial-red); color: white; padding: 10px; font-weight: 900; font-size: 0.8rem; }
     .modal-body { padding: 30px; }
     .modal-footer { display: flex; gap: 10px; margin-top: 20px; }
-
     .btn-black { background: black; color: white; border: none; padding: 10px 20px; font-weight: 900; cursor: pointer; }
     .btn-outline { background: white; color: black; border: 2px solid black; padding: 10px 20px; font-weight: 900; cursor: pointer; }
-
-    /* SYSTEM STATUS */
     .system-status-bar { padding: 12px; font-weight: 900; font-size: 0.75rem; border: 2px solid black; margin-bottom: 20px; display: flex; align-items: center; }
     .status-ok { background: var(--industrial-green); color: black; }
     .status-fault { background: var(--industrial-red); color: white; }
     .status-tag { background: rgba(0,0,0,0.2); padding: 2px 5px; margin-right: 10px; }
-
     .loading-terminal { text-align: center; padding: 100px; font-weight: 900; font-size: 1.2rem; color: #ccc; }
 </style>
 
 @code {
     [Parameter] public int Id { get; set; }
     private CarDto? _car;
+    private List<ServiceRecordDto>? _serviceRecords;
     private int? _currentUserId;
     private string? _systemFeedback;
     private bool _isError = false;
     private bool _isFavorited = false;
+
+    // Record Management State
+    private bool _showRecordModal = false;
+    private bool _isSubmittingRecord = false;
+    private int? _editingRecordId = null;
+    private CreateServiceRecordDto _recordModel = new() { ServiceDate = DateTime.Now };
 
     private bool _showConfirmModal = false;
     private string _confirmMessage = "";
@@ -252,6 +307,8 @@
     {
         try {
             _car = await Http.GetFromJsonAsync<CarDto>($"cars/{Id}");
+            await LoadServiceRecords();
+            
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
             
             if (authState.User.Identity?.IsAuthenticated ?? false)
@@ -262,13 +319,76 @@
                     try {
                         var userProfile = await Http.GetFromJsonAsync<UserDto>($"users/by-email/{Uri.EscapeDataString(email)}");
                         _currentUserId = userProfile?.Id;
-                    } catch { /* User not found in custom table yet */ }
+                    } catch { }
                 }
 
                 var favs = await Http.GetFromJsonAsync<List<CarDto>>("favorites");
                 _isFavorited = favs?.Any(f => f.Id == Id) ?? false;
             }
         } catch { Nav.NavigateTo("/"); }
+    }
+
+    private async Task LoadServiceRecords()
+    {
+        _serviceRecords = await Http.GetFromJsonAsync<List<ServiceRecordDto>>($"cars/{Id}/service-records");
+    }
+
+    private void OpenCreateRecord()
+    {
+        _editingRecordId = null;
+        _recordModel = new CreateServiceRecordDto { ServiceDate = DateTime.Now, Grade = 5.0 };
+        _showRecordModal = true;
+    }
+
+    private void OpenEditRecord(ServiceRecordDto record)
+    {
+        _editingRecordId = record.Id;
+        _recordModel = new CreateServiceRecordDto { 
+            ServiceDate = DateTime.Parse(record.ServiceDate),
+            MileageAtService = record.MileageAtService,
+            Grade = record.Grade
+        };
+        _showRecordModal = true;
+    }
+
+    private async Task HandleRecordSubmit()
+    {
+        _isSubmittingRecord = true;
+        try 
+        {
+            HttpResponseMessage res;
+            if (_editingRecordId == null)
+                res = await Http.PostAsJsonAsync($"cars/{Id}/service-records", _recordModel);
+            else
+                res = await Http.PutAsJsonAsync($"cars/{Id}/service-records/{_editingRecordId}", _recordModel);
+
+            if (res.IsSuccessStatusCode)
+            {
+                _showRecordModal = false;
+                _systemFeedback = "SERVICE_PROTOCOL_SYNCHRONIZED";
+                _isError = false;
+                await LoadServiceRecords();
+            }
+            else
+            {
+                _isError = true;
+                _systemFeedback = "PROTOCOL_REJECTED_BY_CORE";
+            }
+        }
+        catch { _isError = true; _systemFeedback = "NETWORK_TERMINAL_FAILURE"; }
+        finally { _isSubmittingRecord = false; }
+    }
+
+    private async Task DeleteRecord(int recordId)
+    {
+        var res = await Http.DeleteAsync($"cars/{Id}/service-records/{recordId}");
+        if (res.IsSuccessStatusCode)
+        {
+            _systemFeedback = "RECORD_PURGED_SUCCESSFULLY";
+            _isError = false;
+            await LoadServiceRecords();
+        }
+        else { _isError = true; _systemFeedback = "DELETION_REJECTED"; }
     }
 
     private async Task ToggleFavorite()
@@ -278,22 +398,12 @@
             if (_isFavorited)
             {
                 var res = await Http.DeleteAsync($"favorites/{Id}");
-                if (res.IsSuccessStatusCode)
-                {
-                    _isFavorited = false;
-                    _systemFeedback = "LISTING_REMOVED_FROM_VAULT";
-                    _isError = false;
-                }
+                if (res.IsSuccessStatusCode) { _isFavorited = false; _systemFeedback = "LISTING_REMOVED_FROM_VAULT"; _isError = false; }
             }
             else
             {
                 var res = await Http.PostAsJsonAsync("favorites", Id);
-                if (res.IsSuccessStatusCode)
-                {
-                    _isFavorited = true;
-                    _systemFeedback = "LISTING_SECURED_IN_VAULT";
-                    _isError = false;
-                }
+                if (res.IsSuccessStatusCode) { _isFavorited = true; _systemFeedback = "LISTING_SECURED_IN_VAULT"; _isError = false; }
             }
             StateHasChanged();
             await Task.Delay(3000);
@@ -321,9 +431,7 @@
     private async Task MarkAsSold()
     {
         if (_car == null) return;
-        var update = new CreateCarDto { 
-            Brand = _car.Brand, Model = _car.Model, Price = _car.Price, Year = _car.Year, StatusName = "Sold" 
-        };
+        var update = new CreateCarDto { Brand = _car.Brand, Model = _car.Model, Price = _car.Price, Year = _car.Year, StatusName = "Sold" };
         var res = await Http.PutAsJsonAsync($"cars/{Id}", update);
         if (res.IsSuccessStatusCode) Nav.NavigateTo(Nav.Uri, forceLoad: true);
         else { _isError = true; _systemFeedback = "CRITICAL_UPDATE_FAILURE"; }

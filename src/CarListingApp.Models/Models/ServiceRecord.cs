@@ -6,7 +6,7 @@ public partial class ServiceRecord
 
     public int MileageAtService { get; set; }
 
-    public DateOnly ServiceDate { get; set; }
+    public DateTime ServiceDate { get; set; }
 
     public double Grade { get; set; }
 
