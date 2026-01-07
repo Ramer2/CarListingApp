@@ -286,6 +286,7 @@ public class UserService : IUserService
         var user = await _context.Users
             .Include(u => u.UserFavorites)
             .Include(u => u.Cars)
+            .ThenInclude(c => c.ServiceRecords)
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         if (user == null)
             throw new KeyNotFoundException($"No user found with ID {id}.");
@@ -297,6 +298,10 @@ public class UserService : IUserService
 
         foreach (var car in user.Cars)
         {
+            foreach (var serviceRecord in car.ServiceRecords)
+            {
+                _context.ServiceRecords.Remove(serviceRecord);
+            }
             _context.Cars.Remove(car);
         }
         
