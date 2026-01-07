@@ -175,10 +175,41 @@ else
         }
     }
 
+    private bool ValidateUpdateData()
+    {
+        if (_fullUserData == null) return false;
+
+        if (string.IsNullOrWhiteSpace(_fullUserData.Username) || _fullUserData.Username.Length < 3)
+        {
+            _formStatus = "VALIDATION_FAULT: USERNAME_TOO_SHORT";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_fullUserData.Email) || !_fullUserData.Email.Contains("@"))
+        {
+            _formStatus = "VALIDATION_FAULT: INVALID_EMAIL_FORMAT";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_newPassword) || _newPassword.Length < 6)
+        {
+            _formStatus = "VALIDATION_FAULT: PASSWORD_MIN_6_CHARACTERS";
+            return false;
+        }
+
+        return true;
+    }
+
     private async Task UpdateAccount()
     {
         _formStatus = "PROCESSING_REQUEST...";
         _isError = false;
+
+        if (!ValidateUpdateData())
+        {
+            _isError = true;
+            return;
+        }
 
         var updateDto = new CreateUserDto 
         { 
@@ -204,15 +235,26 @@ else
         }
     }
 
+    private bool ValidateDeletionState()
+    {
+        if (_fullUserData == null)
+        {
+            _formStatus = "ERROR: USER_NODE_NOT_INITIALIZED";
+            _isError = true;
+            return false;
+        }
+        return true;
+    }
+
     private async Task DeleteAccount()
     {
-        if (_fullUserData == null) return;
+        if (!ValidateDeletionState()) return;
 
         bool confirmed = await Js.InvokeAsync<bool>("confirm", "CRITICAL_ACTION: PERMANENTLY DELETE ACCOUNT?");
         
         if (confirmed)
         {
-            var response = await Http.DeleteAsync($"users/{_fullUserData.Id}");
+            var response = await Http.DeleteAsync($"users/{_fullUserData!.Id}");
             
             if (response.IsSuccessStatusCode)
             {

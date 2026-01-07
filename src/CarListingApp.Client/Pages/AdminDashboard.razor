@@ -147,25 +147,21 @@
 }
 
 <style>
+    /* STYLES UNCHANGED */
     .container-terminal { max-width: 1200px; margin: 3rem auto; padding: 0 20px; }
     .section-label { font-weight: 900; font-size: 0.8rem; color: #888; margin-bottom: 10px; letter-spacing: 2px; }
     .system-clock { font-family: monospace; font-size: 0.7rem; color: #aaa; }
-    
-    /* TABLE STYLING */
     .db-header { display: flex; background: black; color: white; padding: 15px; font-weight: 900; font-size: 0.7rem; letter-spacing: 1px; }
     .header-magenta { background: #ff00ff; color: black; }
     .db-row { display: flex; padding: 15px; border-bottom: 1px solid #eee; align-items: center; transition: 0.1s; }
     .db-row:hover { background: #fafafa; }
     .car-hover:hover { border-left: 5px solid #ff00ff; }
-
     .col-id { width: 80px; font-family: monospace; font-weight: 900; }
     .col-main { flex: 2; display: flex; flex-direction: column; }
     .col-role, .col-status, .col-price { flex: 1; }
     .col-action { width: 140px; text-align: right; }
-
     .u-name { font-weight: 900; font-size: 0.95rem; text-transform: uppercase; }
     .u-email { font-size: 0.7rem; color: #888; font-family: monospace; }
-
     .role-tag { padding: 3px 8px; font-size: 0.6rem; font-weight: 900; border: 1px solid black; }
     .role-tag.admin { background: black; color: white; }
     .status-dot { height: 8px; width: 8px; display: inline-block; border-radius: 50%; margin-right: 5px; }
@@ -173,22 +169,16 @@
     .blocked { background: #ff0055; }
     .txt-red { color: #ff0055; }
     .txt-green { color: #00ff00; }
-
     .status-tag-mini { font-size: 0.6rem; padding: 2px 6px; font-weight: 900; border: 1px solid black; }
     .status-tag-mini.active { background: #00ff00; }
     .status-tag-mini.sold { background: black; color: white; }
-
-    /* BUTTONS */
     .btn-terminal { background: white; border: 2px solid black; padding: 6px 12px; font-size: 0.65rem; font-weight: 900; cursor: pointer; }
     .btn-terminal:hover { background: black; color: white; }
-
-    /* MODAL */
     .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; z-index: 2000; }
     .modal-header-black { background: black; color: white; padding: 20px; font-weight: 900; font-size: 0.8rem; }
     .modal-body-industrial { padding: 30px; }
     .modal-footer-industrial { display: flex; gap: 15px; margin-top: 25px; padding-top: 20px; border-top: 2px solid black; }
     .industrial-label { font-size: 0.65rem; font-weight: 900; color: #888; margin-bottom: 5px; display: block; }
-
     .status-banner { padding: 8px 15px; font-weight: 900; font-size: 0.7rem; border: 2px solid black; }
     .success { background: #00ff00; color: black; }
     .fault { background: #ff0055; color: white; }
@@ -228,13 +218,29 @@
         };
     }
 
+    private bool ValidateData()
+    {
+        if (_selectedUser == null) return false;
+        
+        if (string.IsNullOrWhiteSpace(_selectedUser.Username) || 
+            string.IsNullOrWhiteSpace(_selectedUser.Email) || 
+            !_selectedUser.Email.Contains("@"))
+        {
+            _statusMessage = "VALIDATION_ERROR: INVALID_CREDENTIALS";
+            _isError = true;
+            return false;
+        }
+        return true;
+    }
+
     private async Task SaveUserChanges()
     {
-        if (_selectedUser == null) return;
+        if (!ValidateData()) return;
+
         try 
         {
             var update = new { 
-                _selectedUser.Email, 
+                _selectedUser!.Email, 
                 _selectedUser.Username, 
                 _selectedUser.IsBlocked, 
                 RoleName = _selectedUser.Role 

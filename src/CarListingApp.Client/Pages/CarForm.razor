@@ -66,7 +66,7 @@
                 <button type="submit" class="btn-black" style="width: 300px; padding: 18px;">PUBLISH_LOG_ENTRY</button>
                 @if (_showPostError)
                 {
-                    <span style="color: #ff0055; font-weight: 900; font-size: 0.7rem; margin-left: 20px;">[UPLOAD_FAILED]: VERIFY DATA FIELDS.</span>
+                    <span style="color: #ff0055; font-weight: 900; font-size: 0.7rem; margin-left: 20px;">[UPLOAD_FAILED]: @(_errorMessage ?? "SOMETHING WENT WRONG")</span>
                 }
             </div>
         </div>
@@ -80,12 +80,45 @@
 @code {
     private CreateCarDto _carModel = new();
     private bool _showPostError = false;
+    private string? _errorMessage;
+
+    private bool ValidateData()
+    {
+        if (string.IsNullOrWhiteSpace(_carModel.Brand) || string.IsNullOrWhiteSpace(_carModel.Model))
+        {
+            _errorMessage = "VALIDATION_ERROR: BRAND_AND_MODEL_REQUIRED";
+            return false;
+        }
+        if (_carModel.Price <= 0)
+        {
+            _errorMessage = "VALIDATION_ERROR: INVALID_PRICE";
+            return false;
+        }
+        if (_carModel.Year < 1900 || _carModel.Year > 2026)
+        {
+            _errorMessage = "VALIDATION_ERROR: YEAR_OUT_OF_RANGE";
+            return false;
+        }
+        return true;
+    }
 
     private async Task HandleSubmit()
     {
         _showPostError = false;
+        _errorMessage = null;
+
+        if (!ValidateData())
+        {
+            _showPostError = true;
+            return;
+        }
+
         var response = await Http.PostAsJsonAsync("cars", _carModel);
         if (response.IsSuccessStatusCode) Nav.NavigateTo("/");
-        else _showPostError = true;
+        else 
+        {
+            _showPostError = true;
+            _errorMessage = "API_REJECTION_ERROR";
+        }
     }
 }

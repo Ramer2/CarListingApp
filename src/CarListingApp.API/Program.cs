@@ -2,6 +2,7 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using CarListingApp.DAL.DBContext;
 using CarListingApp.Services.Helpers.JwtOptions;
+using CarListingApp.Services.Helpers.Middleware;
 using CarListingApp.Services.Services.CarService;
 using CarListingApp.Services.Services.Favorite;
 using CarListingApp.Services.Services.TokenService;
@@ -66,6 +67,8 @@ app.UseCors("AllowBlazor");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+app.UseMiddleware<BlockedUserMiddleware>();
 
 app.MapControllers();
 

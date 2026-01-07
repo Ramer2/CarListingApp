@@ -131,10 +131,43 @@
         } catch { _statusMessage = "FAILED_TO_FETCH_RECORDS"; _isError = true; }
     }
 
+    private bool ValidateData()
+    {
+        if (_carModel == null) return false;
+
+        if (string.IsNullOrWhiteSpace(_carModel.Brand) || string.IsNullOrWhiteSpace(_carModel.Model))
+        {
+            _statusMessage = "VALIDATION_FAULT: BRAND_AND_MODEL_REQUIRED";
+            return false;
+        }
+
+        if (_carModel.Price <= 0)
+        {
+            _statusMessage = "VALIDATION_FAULT: PRICE_MUST_BE_GREATER_THAN_ZERO";
+            return false;
+        }
+
+        if (_carModel.Year < 1900 || _carModel.Year > DateTime.Now.Year + 1)
+        {
+            _statusMessage = "VALIDATION_FAULT: INVALID_MANUFACTURE_YEAR";
+            return false;
+        }
+
+        return true;
+    }
+
     private async Task HandleUpdate()
     {
+        _isError = false;
         _isSubmitting = true;
         _statusMessage = "COMMENCING_UPLOAD...";
+
+        if (!ValidateData())
+        {
+            _isError = true;
+            _isSubmitting = false;
+            return;
+        }
         
         var res = await Http.PutAsJsonAsync($"cars/{Id}", _carModel);
         if (res.IsSuccessStatusCode) {

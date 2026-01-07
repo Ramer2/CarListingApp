@@ -52,10 +52,31 @@
     private string? _userErrorMessage;
     private bool _isProcessing;
 
+    private bool ValidateData()
+    {
+        if (string.IsNullOrWhiteSpace(_identifier))
+        {
+            _userErrorMessage = "IDENTIFIER_FIELD_CANNOT_BE_EMPTY";
+            return false;
+        }
+        if (string.IsNullOrWhiteSpace(_loginModel.Password) || _loginModel.Password.Length < 4)
+        {
+            _userErrorMessage = "PASSWORD_STRENGTH_INSUFFICIENT";
+            return false;
+        }
+        return true;
+    }
+
     private async Task HandleLogin()
     {
         _isProcessing = true;
         _userErrorMessage = null;
+
+        if (!ValidateData())
+        {
+            _isProcessing = false;
+            return;
+        }
 
         try 
         {
