@@ -1,5 +1,4 @@
 ﻿@page "/register"
-@using CarListingApp.Services.DTOs.User
 @using System.ComponentModel.DataAnnotations
 @inject HttpClient Http
 @inject NavigationManager Nav
@@ -70,9 +69,44 @@
     private RegisterDto _regModel = new() { RoleName = "User" };
     private string? _userErrorMessage;
 
+    private bool ValidateData()
+    {
+        if (string.IsNullOrWhiteSpace(_regModel.Username) || _regModel.Username.Length < 3)
+        {
+            _userErrorMessage = "VALIDATION_ERROR: USERNAME_INSUFFICIENT_LENGTH";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_regModel.Email) || !_regModel.Email.Contains("@"))
+        {
+            _userErrorMessage = "VALIDATION_ERROR: INVALID_EMAIL_STRUCTURE";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_regModel.Password) || _regModel.Password.Length < 6)
+        {
+            _userErrorMessage = "VALIDATION_ERROR: SECURITY_KEY_STRENGTH_LOW";
+            return false;
+        }
+
+        if (string.IsNullOrWhiteSpace(_regModel.RoleName))
+        {
+            _userErrorMessage = "VALIDATION_ERROR: ACCOUNT_TYPE_NOT_DEFINED";
+            return false;
+        }
+
+        return true;
+    }
+
     private async Task HandleRegister()
     {
         _userErrorMessage = null;
+
+        if (!ValidateData())
+        {
+            return;
+        }
+
         try 
         {
             var response = await Http.PostAsJsonAsync("users", _regModel);
