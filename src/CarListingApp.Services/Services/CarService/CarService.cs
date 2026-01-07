@@ -228,6 +228,8 @@ public class CarService : ICarService
     {
         var car = await _context.Cars
             .Include(c => c.SellerNavigation)
+            .Include(c => c.UserFavorites)
+            .Include(c => c.ServiceRecords)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
         if (car == null)
@@ -240,6 +242,16 @@ public class CarService : ICarService
             {
                 throw new UnauthorizedAccessException("You are not allowed to delete this car.");
             }
+        }
+
+        foreach (var uf in car.UserFavorites)
+        {
+            _context.UserFavorites.Remove(uf);
+        }
+
+        foreach (var sr in car.ServiceRecords)
+        {
+            _context.ServiceRecords.Remove(sr);
         }
 
         _context.Cars.Remove(car);

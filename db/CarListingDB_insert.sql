@@ -38,3 +38,23 @@ INSERT INTO UserFavorites (User_Id, Car_Id, PriceChangeNotify) VALUES
 
 -- Admin favorites a car
 (6, 2, 0);
+
+INSERT INTO ServiceRecord
+(Id, MileageAtService, ServiceDate, Grade, Car)
+VALUES
+-- Toyota Corolla (Car Id = 1)
+(1, 30000, '2020-05-10', 4.5, 1),
+(2, 60000, '2022-06-18', 4.7, 1),
+
+-- Honda Civic (Car Id = 2)
+(3, 50000, '2019-04-02', 4.2, 2),
+(4, 90000, '2022-09-11', 4.0, 2),
+
+-- BMW X3 (Car Id = 3)
+(5, 20000, '2021-03-22', 4.8, 3),
+
+-- Audi A6 (Car Id = 4)
+(6, 15000, '2022-01-15', 4.9, 4),
+(7, 28000, '2023-07-09', 4.8, 4);
+
+-- Ford Focus (Car Id = 5) intentionally has NO service records

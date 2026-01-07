@@ -30,6 +30,8 @@ public partial class Car
 
     public virtual User SellerNavigation { get; set; } = null!;
 
+    public virtual ICollection<ServiceRecord> ServiceRecords { get; set; } = new List<ServiceRecord>();
+
     public virtual Status StatusNavigation { get; set; } = null!;
 
     public virtual ICollection<UserFavorite> UserFavorites { get; set; } = new List<UserFavorite>();

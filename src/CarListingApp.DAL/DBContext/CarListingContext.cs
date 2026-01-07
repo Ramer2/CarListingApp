@@ -18,6 +18,8 @@ public partial class CarListingContext : DbContext
 
     public virtual DbSet<Role> Roles { get; set; }
 
+    public virtual DbSet<ServiceRecord> ServiceRecords { get; set; }
+
     public virtual DbSet<Status> Statuses { get; set; }
 
     public virtual DbSet<User> Users { get; set; }
@@ -46,6 +48,18 @@ public partial class CarListingContext : DbContext
         modelBuilder.Entity<Role>(entity =>
         {
             entity.ToTable("Role");
+        });
+
+        modelBuilder.Entity<ServiceRecord>(entity =>
+        {
+            entity.ToTable("ServiceRecord");
+
+            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.ServiceDate).HasColumnType("datetime");
+
+            entity.HasOne(d => d.CarNavigation).WithMany(p => p.ServiceRecords)
+                .HasForeignKey(d => d.Car)
+                .OnDelete(DeleteBehavior.ClientSetNull);
         });
 
         modelBuilder.Entity<Status>(entity =>

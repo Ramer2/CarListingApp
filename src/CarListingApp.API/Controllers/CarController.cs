@@ -60,22 +60,11 @@ public class CarController : ControllerBase
     {
         try
         {
-            if (User.IsInRole("Admin"))
-            { 
-                if (createCarDto.SellerId == -1)
-                    return Results.BadRequest("Insufficient seller details. No id provided.");
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (email == null)
+                return Results.Unauthorized();
                 
-                var seller = await _userService.GetUserById(createCarDto.SellerId, cancellationToken);
-                return Results.Ok(await _carService.CreateCar(createCarDto, seller.Email, cancellationToken));
-            }
-            else
-            {
-                var email = User.FindFirst(ClaimTypes.Email)?.Value;
-                if (email == null)
-                    return Results.Unauthorized();
-                
-                return Results.Ok(await _carService.CreateCar(createCarDto, email, cancellationToken));
-            }
+            return Results.Ok(await _carService.CreateCar(createCarDto, email, cancellationToken));
         }
         catch (KeyNotFoundException ex)
         {
@@ -97,25 +86,11 @@ public class CarController : ControllerBase
     {
         try
         {
-            if (User.IsInRole("Admin"))
-            {
-                if (createCarDto.SellerId == null)
-                    return Results.BadRequest("Insufficient seller details. No id provided.");
+            var email = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (email == null)
+                return Results.Unauthorized();
                 
-                var seller = await _userService.GetUserById(createCarDto.SellerId, cancellationToken);
-                if (seller == null)
-                    return Results.NotFound("No seller found for the given id.");
-                
-                return Results.Ok(await _carService.UpdateCar(createCarDto, id, seller.Email, cancellationToken));
-            }
-            else
-            {
-                var email = User.FindFirst(ClaimTypes.Email)?.Value;
-                if (email == null)
-                    return Results.Unauthorized();
-                
-                return Results.Ok(await _carService.UpdateCar(createCarDto, id, email, cancellationToken));
-            }
+            return Results.Ok(await _carService.UpdateCar(createCarDto, id, email, cancellationToken));
         }
         catch (KeyNotFoundException ex)
         {

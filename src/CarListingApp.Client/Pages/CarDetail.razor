@@ -322,8 +322,7 @@
     {
         if (_car == null) return;
         var update = new CreateCarDto { 
-            Brand = _car.Brand, Model = _car.Model, Price = _car.Price, Year = _car.Year,
-            SellerId = _car.SellerId, StatusName = "Sold" 
+            Brand = _car.Brand, Model = _car.Model, Price = _car.Price, Year = _car.Year, StatusName = "Sold" 
         };
         var res = await Http.PutAsJsonAsync($"cars/{Id}", update);
         if (res.IsSuccessStatusCode) Nav.NavigateTo(Nav.Uri, forceLoad: true);
