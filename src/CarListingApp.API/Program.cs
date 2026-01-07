@@ -3,6 +3,7 @@ using System.Text;
 using CarListingApp.DAL.DBContext;
 using CarListingApp.Services.Helpers.JwtOptions;
 using CarListingApp.Services.Services.CarService;
+using CarListingApp.Services.Services.Favorite;
 using CarListingApp.Services.Services.TokenService;
 using CarListingApp.Services.Services.UserService;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -15,7 +16,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowBlazor", policy =>
     {
-        policy.WithOrigins("http://localhost:5004") // Your Blazor URL
+        policy.WithOrigins("http://localhost:5004")
             .AllowAnyMethod()
             .AllowAnyHeader()
             .AllowCredentials(); 
@@ -47,6 +48,7 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme).AddJw
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<ICarService, CarService>();
 builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<IFavoritesService, FavoritesService>();
 
 builder.Services.AddControllers();
 builder.Services.AddOpenApi();

@@ -43,8 +43,22 @@
                         <h1 class="brand-model">@_car.Brand.ToUpper() @_car.Model.ToUpper()</h1>
                         <span class="year-stamp">MODEL_YEAR: @_car.Year</span>
                     </div>
-                    <div class="price-display">
-                        <span class="currency">$</span>@_car.Price.ToString("N0")
+                    
+                    @* PRICE & FAVORITE TOGGLE *@
+                    <div class="price-container">
+                        <div class="price-display">
+                            <span class="currency">$</span>@_car.Price.ToString("N0")
+                        </div>
+                        
+                        <AuthorizeView>
+                            <Authorized>
+                                <button type="button" class="btn-fav-large @(_isFavorited ? "active" : "")" 
+                                        @onclick="ToggleFavorite" 
+                                        title="@(_isFavorited ? "Remove from Vault" : "Save to Vault")">
+                                    <i class="bi @(_isFavorited ? "bi-bookmark-fill" : "bi-bookmark")"></i>
+                                </button>
+                            </Authorized>
+                        </AuthorizeView>
                     </div>
                 </div>
 
@@ -117,6 +131,13 @@
 }
 
 <style>
+    :root {
+        --industrial-black: #000000;
+        --industrial-magenta: #ff00ff;
+        --industrial-green: #00ff00;
+        --industrial-red: #ff0055;
+    }
+
     .details-container { max-width: 1100px; margin: 3rem auto; padding: 0 20px; font-family: 'Inter', sans-serif; }
 
     /* LAYOUT ENGINE */
@@ -131,24 +152,16 @@
     /* SIDEBAR */
     .visual-sidebar {
         background: var(--industrial-magenta);
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        position: relative;
-        padding: 40px;
-        color: white;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        position: relative; padding: 40px; color: white;
         border-right: 4px solid var(--industrial-black);
     }
 
     .status-badge {
-        position: absolute;
-        top: 0; left: 0;
-        background: black;
-        color: white;
-        padding: 8px 15px;
-        font-weight: 900;
-        font-size: 0.75rem;
+        position: absolute; top: 0; left: 0;
+        background: black; color: white;
+        padding: 8px 15px; font-weight: 900; font-size: 0.75rem;
     }
 
     .sidebar-icon { font-size: 8rem; filter: drop-shadow(5px 5px 0px rgba(0,0,0,0.2)); }
@@ -158,30 +171,30 @@
     .content-body { padding: 50px; display: flex; flex-direction: column; gap: 30px; }
 
     .header-section {
-        display: flex;
-        justify-content: space-between;
-        align-items: flex-start;
-        border-bottom: 2px solid #eee;
+        display: flex; justify-content: space-between;
+        align-items: flex-start; border-bottom: 2px solid #eee;
         padding-bottom: 20px;
     }
 
     .brand-model { font-weight: 900; font-size: 2.5rem; letter-spacing: -2px; line-height: 1; margin: 0; }
     .year-stamp { font-size: 0.75rem; font-weight: 900; color: #888; }
+    
+    .price-container { display: flex; align-items: center; gap: 20px; }
     .price-display { font-size: 3rem; font-weight: 900; letter-spacing: -2px; color: var(--industrial-black); }
     .currency { font-size: 1.5rem; vertical-align: top; margin-right: 5px; }
 
+    .btn-fav-large {
+        background: white; border: 3px solid black;
+        width: 60px; height: 60px; display: flex;
+        align-items: center; justify-content: center;
+        font-size: 1.5rem; cursor: pointer; transition: 0.1s;
+    }
+    .btn-fav-large:hover { color: var(--industrial-magenta); border-color: var(--industrial-magenta); }
+    .btn-fav-large.active { background: black; color: var(--industrial-magenta); border-color: black; }
+
     /* SPECS GRID */
-    .specs-grid {
-        display: grid;
-        grid-template-columns: repeat(2, 1fr);
-        gap: 15px;
-    }
-
-    .spec-tile {
-        border: 2px solid var(--industrial-black);
-        padding: 15px;
-    }
-
+    .specs-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; }
+    .spec-tile { border: 2px solid var(--industrial-black); padding: 15px; }
     .spec-tile label { display: block; font-size: 0.65rem; font-weight: 900; color: #888; margin-bottom: 5px; }
     .spec-tile .value { font-weight: 900; font-size: 1.1rem; }
 
@@ -196,16 +209,10 @@
     .panel-actions { display: flex; gap: 10px; }
 
     .btn-ctrl {
-        flex: 1;
-        padding: 12px;
-        font-weight: 900;
-        font-size: 0.75rem;
-        border: 2px solid var(--industrial-black);
-        background: white;
-        cursor: pointer;
-        transition: all 0.1s;
+        flex: 1; padding: 12px; font-weight: 900; font-size: 0.75rem;
+        border: 2px solid var(--industrial-black); background: white;
+        cursor: pointer; transition: all 0.1s;
     }
-
     .btn-edit:hover { background: #eee; }
     .btn-sold:hover { background: var(--industrial-green); }
     .btn-delete:hover { background: var(--industrial-red); color: white; }
@@ -217,8 +224,11 @@
     .modal-body { padding: 30px; }
     .modal-footer { display: flex; gap: 10px; margin-top: 20px; }
 
+    .btn-black { background: black; color: white; border: none; padding: 10px 20px; font-weight: 900; cursor: pointer; }
+    .btn-outline { background: white; color: black; border: 2px solid black; padding: 10px 20px; font-weight: 900; cursor: pointer; }
+
     /* SYSTEM STATUS */
-    .system-status-bar { padding: 12px; font-weight: 900; font-size: 0.75rem; border: 2px solid black; margin-bottom: 20px; }
+    .system-status-bar { padding: 12px; font-weight: 900; font-size: 0.75rem; border: 2px solid black; margin-bottom: 20px; display: flex; align-items: center; }
     .status-ok { background: var(--industrial-green); color: black; }
     .status-fault { background: var(--industrial-red); color: white; }
     .status-tag { background: rgba(0,0,0,0.2); padding: 2px 5px; margin-right: 10px; }
@@ -232,8 +242,8 @@
     private int? _currentUserId;
     private string? _systemFeedback;
     private bool _isError = false;
+    private bool _isFavorited = false;
 
-    // Modal state
     private bool _showConfirmModal = false;
     private string _confirmMessage = "";
     private Func<Task>? _pendingAction;
@@ -243,13 +253,54 @@
         try {
             _car = await Http.GetFromJsonAsync<CarDto>($"cars/{Id}");
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
-            var email = authState.User.FindFirst(ClaimTypes.Email)?.Value ?? authState.User.FindFirst("email")?.Value;
-            if (email != null)
+            
+            if (authState.User.Identity?.IsAuthenticated ?? false)
             {
-                var userProfile = await Http.GetFromJsonAsync<UserDto>($"users/by-email/{Uri.EscapeDataString(email)}");
-                _currentUserId = userProfile?.Id;
+                var email = authState.User.FindFirst(ClaimTypes.Email)?.Value ?? authState.User.FindFirst("email")?.Value;
+                if (email != null)
+                {
+                    try {
+                        var userProfile = await Http.GetFromJsonAsync<UserDto>($"users/by-email/{Uri.EscapeDataString(email)}");
+                        _currentUserId = userProfile?.Id;
+                    } catch { /* User not found in custom table yet */ }
+                }
+
+                var favs = await Http.GetFromJsonAsync<List<CarDto>>("favorites");
+                _isFavorited = favs?.Any(f => f.Id == Id) ?? false;
             }
         } catch { Nav.NavigateTo("/"); }
+    }
+
+    private async Task ToggleFavorite()
+    {
+        try 
+        {
+            if (_isFavorited)
+            {
+                var res = await Http.DeleteAsync($"favorites/{Id}");
+                if (res.IsSuccessStatusCode)
+                {
+                    _isFavorited = false;
+                    _systemFeedback = "LISTING_REMOVED_FROM_VAULT";
+                    _isError = false;
+                }
+            }
+            else
+            {
+                var res = await Http.PostAsJsonAsync("favorites", Id);
+                if (res.IsSuccessStatusCode)
+                {
+                    _isFavorited = true;
+                    _systemFeedback = "LISTING_SECURED_IN_VAULT";
+                    _isError = false;
+                }
+            }
+            StateHasChanged();
+            await Task.Delay(3000);
+            _systemFeedback = null;
+            StateHasChanged();
+        }
+        catch { _isError = true; _systemFeedback = "VAULT_COMMUNICATION_ERROR"; }
     }
 
     private void RequestConfirmation(string message, Func<Task> action)

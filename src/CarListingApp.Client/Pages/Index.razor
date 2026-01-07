@@ -1,6 +1,8 @@
 ﻿@page "/"
 @using CarListingApp.Services.DTOs.Car
+@using Microsoft.AspNetCore.Components.Authorization
 @inject HttpClient Http
+@inject AuthenticationStateProvider AuthStateProvider
 
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h1 style="font-weight:900; letter-spacing:-1px; margin:0;">FLEET_INVENTORY</h1>
@@ -26,9 +28,24 @@
     {
         @foreach (var car in FilteredCars)
         {
-            <div class="heavy-card" style="margin-bottom: 15px; background: white;">
+            <div class="heavy-card" style="margin-bottom: 15px; background: white; position: relative;">
                 <div style="padding: 20px; flex: 1; border-right: 2px solid black;">
-                    <div style="font-size: 0.6rem; font-weight: 900; color: #888;">VEHICLE_ID: #@car.Id</div>
+                    <div class="d-flex justify-content-between">
+                        <div style="font-size: 0.6rem; font-weight: 900; color: #888;">VEHICLE_ID: #@car.Id</div>
+        
+                        <AuthorizeView>
+                            <Authorized>
+                                @* FIXED: Dynamic icon class and color class *@
+                                <button type="button" 
+                                        class="fav-btn @(IsFavorited(car.Id) ? "is-fav" : "")" 
+                                        @onclick="() => ToggleFavorite(car.Id)" 
+                                        @onclick:stopPropagation="true">
+                                    <i class="bi @(IsFavorited(car.Id) ? "bi-bookmark-fill" : "bi-bookmark")"></i>
+                                </button>
+                            </Authorized>
+                        </AuthorizeView>
+                    </div>
+                    
                     <h4 style="margin: 5px 0; font-weight: 900;">@car.Brand.ToUpper() @car.Model.ToUpper()</h4>
                     <span class="status-badge" style="background: @(car.Status == "Active" ? "#00ff00" : "magenta"); color: @(car.Status == "Active" ? "black" : "white");">
                         @car.Status.ToUpper()
@@ -43,6 +60,12 @@
         }
     }
 </div>
+
+@* NOTIFICATION TOAST *@
+@if (!string.IsNullOrEmpty(_toastMessage))
+{
+    <div class="sys-toast">[@_toastMessage.ToUpper()]</div>
+}
 
 <style>
     .filter-controls { display: flex; align-items: center; gap: 10px; border: 2px solid black; padding: 5px; }
@@ -79,11 +102,27 @@
     }
 
     .view-link:hover { color: magenta; border-color: magenta; }
+    
+     .fav-btn { border: none; background: transparent; cursor: pointer; font-size: 1.2rem; transition: 0.1s; padding: 0; }
+    .fav-btn:hover { color: magenta; transform: scale(1.1); }
+    .fav-btn.is-fav { color: magenta; }
+
+    .sys-toast {
+        position: fixed; bottom: 30px; right: 30px;
+        background: black; color: #00ff00;
+        padding: 15px 25px; font-weight: 900; font-size: 0.75rem;
+        border: 2px solid #00ff00; z-index: 9999;
+        animation: slideIn 0.3s forwards;
+    }
+
+    @@keyframes slideIn { from { transform: translateX(100%); } to { transform: translateX(0); } }
 </style>
 
 @code {
     private List<CarDto>? _cars;
     private bool _showOnlyActive = true; // Default to filtering out sold cars
+    private List<CarDto>? _userFavorites;
+    private string? _toastMessage;
 
     private IEnumerable<CarDto> FilteredCars => _cars?
         .Where(c => !_showOnlyActive || c.Status == "Active") ?? Enumerable.Empty<CarDto>();
@@ -92,6 +131,7 @@
     {
         try {
             _cars = await Http.GetFromJsonAsync<List<CarDto>>("cars");
+            await LoadFavorites();
         } catch {
             _cars = new();
         }
@@ -100,5 +140,49 @@
     private void SetFilter(bool onlyActive)
     {
         _showOnlyActive = onlyActive;
+    }
+    
+    private async Task LoadFavorites()
+    {
+        var authState = await AuthStateProvider.GetAuthenticationStateAsync();
+        if (authState.User.Identity?.IsAuthenticated ?? false)
+        {
+            try {
+                _userFavorites = await Http.GetFromJsonAsync<List<CarDto>>("favorites");
+            } catch { _userFavorites = new(); }
+        }
+    }
+
+    private bool IsFavorited(int carId) => _userFavorites?.Any(f => f.Id == carId) ?? false;
+
+    private async Task ToggleFavorite(int carId)
+    {
+        if (IsFavorited(carId))
+        {
+            var res = await Http.DeleteAsync($"favorites/{carId}");
+            if (res.IsSuccessStatusCode)
+            {
+                _userFavorites?.RemoveAll(f => f.Id == carId);
+                ShowToast("REMOVED_FROM_VAULT");
+            }
+        }
+        else
+        {
+            var res = await Http.PostAsJsonAsync("favorites", carId);
+            if (res.IsSuccessStatusCode)
+            {
+                _userFavorites?.Add(new CarDto { Id = carId });
+                ShowToast("SAVED_TO_VAULT");
+            }
+        }
+    }
+
+    private async void ShowToast(string msg)
+    {
+        _toastMessage = msg;
+        StateHasChanged();
+        await Task.Delay(2000);
+        _toastMessage = null;
+        StateHasChanged();
     }
 }

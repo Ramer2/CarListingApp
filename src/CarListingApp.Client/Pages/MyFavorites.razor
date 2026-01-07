@@ -1,0 +1,94 @@
+﻿@page "/my-favorites"
+@attribute [Authorize]
+@using CarListingApp.Services.DTOs.Car
+@using Microsoft.AspNetCore.Authorization
+@inject HttpClient Http
+@inject NavigationManager Nav
+
+<div class="container-terminal">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="fw-900 m-0">SAVED_LISTINGS_VAULT</h1>
+        <button class="btn-terminal" @onclick="LoadData">REFRESH_SYNC</button>
+    </div>
+
+    @if (_favorites == null)
+    {
+        <div class="loading-box">DECRYPTING_FAVORITES...</div>
+    }
+    else if (!_favorites.Any())
+    {
+        <div class="heavy-card" style="padding: 50px; justify-content: center; align-items: center; color: #888; flex-direction: column;">
+            <i class="bi bi-shield-lock" style="font-size: 3rem; margin-bottom: 20px;"></i>
+            <span>NO_LISTINGS_SAVED_IN_VAULT.</span>
+            <button class="btn-terminal mt-3" @onclick='() => Nav.NavigateTo("/")'>BROWSE_INVENTORY</button>
+        </div>
+    }
+    else
+    {
+        <div class="inventory-grid">
+            @foreach (var car in _favorites)
+            {
+                <div class="heavy-card mb-3" style="background: white; border: 2px solid black; display: flex;">
+                    <div style="padding: 20px; flex: 1; border-right: 2px solid black;">
+                        <div style="font-size: 0.6rem; font-weight: 900; color: #888;">#@car.Id</div>
+                        <h4 style="margin: 0; font-weight: 900;">@car.Brand.ToUpper() @car.Model.ToUpper()</h4>
+                        <span class="badge bg-dark mt-2">@car.Status.ToUpper()</span>
+                    </div>
+                    <div style="width: 250px; display: flex; align-items: center; justify-content: center; gap: 10px; background: #fafafa; padding: 10px;">
+                        <div class="fw-900 me-2">$@car.Price.ToString("N0")</div>
+                        <button class="btn-terminal" @onclick='() => Nav.NavigateTo($"/car/{car.Id}")'>VIEW</button>
+                        <button class="btn-terminal text-danger" @onclick="() => Remove(car.Id)">PURGE</button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+</div>
+
+<style>
+    .container-terminal { max-width: 1000px; margin: 3rem auto; padding: 0 20px; }
+    .btn-terminal { 
+        background: white; border: 2px solid black; 
+        font-weight: 900; font-size: 0.7rem; padding: 8px 15px; 
+        cursor: pointer; text-decoration: none; color: black;
+    }
+    .btn-terminal:hover { background: black; color: white; }
+    .heavy-card { border: 4px solid black; display: flex; }
+    .loading-box { padding: 100px; text-align: center; font-weight: 900; color: #ccc; }
+</style>
+
+@code {
+    private List<CarDto>? _favorites;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadData();
+    }
+
+    private async Task LoadData()
+    {
+        _favorites = null;
+        try {
+            var response = await Http.GetAsync("favorites");
+            if (response.IsSuccessStatusCode)
+            {
+                _favorites = await response.Content.ReadFromJsonAsync<List<CarDto>>();
+            }
+            else { _favorites = new(); }
+        } catch
+        {
+            throw;
+            _favorites = new(); 
+        }
+        StateHasChanged();
+    }
+
+    private async Task Remove(int carId)
+    {
+        var res = await Http.DeleteAsync($"favorites/{carId}");
+        if (res.IsSuccessStatusCode)
+        {
+            await LoadData();
+        }
+    }
+}
