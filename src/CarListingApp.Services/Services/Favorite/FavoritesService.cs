@@ -1,5 +1,6 @@
 ﻿using CarListingApp.DAL.DBContext;
 using CarListingApp.Models.Models;
+using CarListingApp.Models.Models.Enums;
 using CarListingApp.Services.DTOs.Car;
 using Microsoft.EntityFrameworkCore;
 
@@ -71,7 +72,7 @@ public class FavoritesService : IFavoritesService
                 Price = uf.Car.Price,
                 Mileage = uf.Car.Mileage,
                 Year = uf.Car.Year,
-                Status = uf.Car.StatusNavigation.StatusName
+                Status = (StatusEnum) uf.Car.Status
             })
             .ToListAsync(cancellationToken);
     }

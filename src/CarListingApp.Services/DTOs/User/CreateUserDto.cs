@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using CarListingApp.Models.Models.Enums;
 
 namespace CarListingApp.Services.DTOs.User;
 
@@ -16,7 +17,7 @@ public class CreateUserDto
     public string? Password { get; set; } = null!;
 
     [Required]
-    public string RoleName { get; set; } = null!;
+    public RolesEnum Role { get; set; }
     
     public bool IsBlocked { get; set; }
 

@@ -47,7 +47,7 @@
                         <span class="u-email">@user.Email</span>
                     </div>
                     <div class="col-role">
-                        <span class="role-tag @user.Role.ToLower()">@user.Role.ToUpper()</span>
+                        <span class="role-tag @user.Role">@user.Role</span>
                     </div>
                     <div class="col-status">
                         @if (user.IsBlocked)
@@ -94,7 +94,7 @@
                     </div>
                     <div class="col-price fw-900">$@car.Price.ToString("N0")</div>
                     <div class="col-status">
-                        <span class="status-tag-mini @car.Status.ToLower()">@car.Status.ToUpper()</span>
+                        <span class="status-tag-mini @car.Status">@car.Status</span>
                     </div>
                     <div class="col-action">
                         <button class="btn-terminal" @onclick='() => Nav.NavigateTo($"/car/{car.Id}")'>OPEN_LOG</button>

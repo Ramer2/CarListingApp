@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using CarListingApp.Models.Models.Enums;
 
 namespace CarListingApp.Services.DTOs.Car;
 
@@ -33,5 +34,5 @@ public class CreateCarDto
 
     public string? Description { get; set; }
     
-    public string? StatusName { get; set; }
+    public StatusEnum? Status { get; set; }
 }

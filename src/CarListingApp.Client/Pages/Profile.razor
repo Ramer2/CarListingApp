@@ -2,6 +2,7 @@
 @attribute [Authorize]
 @using System.Security.Claims
 @using Blazored.LocalStorage
+@using CarListingApp.Models.Models.Enums
 @using CarListingApp.Services.DTOs.User
 @using Microsoft.AspNetCore.Authorization
 @using Microsoft.AspNetCore.Components.Authorization
@@ -109,8 +110,8 @@ else
                 <div style="padding: 20px; flex: 1; border-right: 2px solid black;">
                     <div style="font-size: 0.6rem; font-weight: 900; color: #888;">VEHICLE_ID: #@car.Id</div>
                     <h4 style="margin: 5px 0; font-weight: 900;">@car.Brand.ToUpper() @car.Model.ToUpper()</h4>
-                    <span class="status-badge" style="display: inline-block; padding: 2px 8px; font-size: 0.6rem; font-weight: 900; background: @(car.Status == "Active" ? "#00ff00" : "magenta"); color: @(car.Status == "Active" ? "black" : "white");">
-                        @car.Status.ToUpper()
+                    <span class="status-badge" style="display: inline-block; padding: 2px 8px; font-size: 0.6rem; font-weight: 900; background: @(car.Status == StatusEnum.Active ? "#00ff00" : "magenta"); color: @(car.Status == StatusEnum.Active ? "black" : "white");">
+                        @car.Status
                     </span>
                 </div>
                 <div style="width: 150px; display: flex; flex-direction: column; justify-content: center; align-items: center; background: #fafafa;">
@@ -251,7 +252,7 @@ else
             Username = _fullUserData!.Username,
             Email = _fullUserData.Email,
             Password = _newPassword,
-            RoleName = _fullUserData.Role
+            Role = _fullUserData.Role
         };
 
         var response = await Http.PutAsJsonAsync($"api/users/{_fullUserData.Id}", updateDto);

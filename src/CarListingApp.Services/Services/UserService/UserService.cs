@@ -1,6 +1,7 @@
 ﻿using System.Globalization;
 using CarListingApp.DAL.DBContext;
 using CarListingApp.Models.Models;
+using CarListingApp.Models.Models.Enums;
 using CarListingApp.Services.DTOs.Car;
 using CarListingApp.Services.DTOs.User;
 using Microsoft.AspNetCore.Identity;
@@ -22,9 +23,7 @@ public class UserService : IUserService
     {
         var userDtos = new List<UserDto>();
         var users = await _context.Users
-                    .Include(u => u.RoleNavigation)
                     .Include(u => u.Cars)
-                    .ThenInclude(c => c.StatusNavigation)
                     .ToListAsync(cancellationToken);
         
         foreach (var user in users)
@@ -45,7 +44,7 @@ public class UserService : IUserService
                     EngineDisplacement = car.EngineDisplacement,
                     EnginePower = car.EnginePower,
                     Mileage = car.Mileage,
-                    Status = car.StatusNavigation.StatusName,
+                    Status = (StatusEnum) car.Status,
                     Description = car.Description,
                 });
             }
@@ -57,7 +56,7 @@ public class UserService : IUserService
                 Email = user.Email,
                 CreatedAt = user.CreatedAt.ToString(CultureInfo.InvariantCulture),
                 IsBlocked = user.IsBlocked,
-                Role = user.RoleNavigation.RoleName,
+                Role = (RolesEnum) user.Role,
                 ListedCars = listedCars,
             });
         }
@@ -72,9 +71,7 @@ public class UserService : IUserService
 
         var user = await _context.Users
             .Where(u => u.Id == id)
-            .Include(u => u.RoleNavigation)
             .Include(u => u.Cars)
-            .ThenInclude(c => c.StatusNavigation)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (user == null)
@@ -95,7 +92,7 @@ public class UserService : IUserService
                 EngineDisplacement = car.EngineDisplacement,
                 EnginePower = car.EnginePower,
                 Mileage = car.Mileage,
-                Status = car.StatusNavigation.StatusName,
+                Status = (StatusEnum) car.Status,
                 Description = car.Description,
             });
         }
@@ -107,7 +104,7 @@ public class UserService : IUserService
             Email = user.Email,
             CreatedAt = user.CreatedAt.ToString(CultureInfo.InvariantCulture),
             IsBlocked = user.IsBlocked,
-            Role = user.RoleNavigation.RoleName,
+            Role = (RolesEnum) user.Role,
             ListedCars = listedCars,
         };
     }
@@ -119,9 +116,7 @@ public class UserService : IUserService
         
         var user = await _context.Users
             .Where(u => u.Email.Equals(email))
-            .Include(u => u.RoleNavigation)
             .Include(u => u.Cars)
-            .ThenInclude(c => c.StatusNavigation)
             .FirstOrDefaultAsync(cancellationToken);
 
         if (user == null)
@@ -142,7 +137,7 @@ public class UserService : IUserService
                 EngineDisplacement = car.EngineDisplacement,
                 EnginePower = car.EnginePower,
                 Mileage = car.Mileage,
-                Status = car.StatusNavigation.StatusName,
+                Status = (StatusEnum) car.Status,
                 Description = car.Description,
             });
         }
@@ -154,7 +149,7 @@ public class UserService : IUserService
             Email = user.Email,
             CreatedAt = user.CreatedAt.ToString(CultureInfo.InvariantCulture),
             IsBlocked = user.IsBlocked,
-            Role = user.RoleNavigation.RoleName,
+            Role = (RolesEnum) user.Role,
             ListedCars = listedCars,
         };
     }
@@ -172,17 +167,13 @@ public class UserService : IUserService
         if (usernameCheck != null)
             throw new ArgumentException("This username is already taken.");
 
-        var role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName.Equals(createUserDto.RoleName), cancellationToken);
-        if (role == null)
-            throw new KeyNotFoundException($"No role with name {createUserDto.RoleName} found.");
-
         var newUser = new User
         {
             Username = createUserDto.Username,
             Email = createUserDto.Email,
             CreatedAt =  DateTime.Now,
             IsBlocked = false,
-            RoleNavigation = role
+            Role = (int) createUserDto.Role
         };
         
         newUser.PasswordHash = _passwordHasher.HashPassword(newUser, createUserDto.Password);
@@ -191,7 +182,6 @@ public class UserService : IUserService
         await _context.SaveChangesAsync(cancellationToken);
         
         var user = await _context.Users
-            .Include(u => u.RoleNavigation)
             .FirstOrDefaultAsync(u => u.Email.Equals(createUserDto.Email), cancellationToken);
         
         return new UserDto
@@ -201,7 +191,7 @@ public class UserService : IUserService
             Email = user.Email,
             CreatedAt = user.CreatedAt.ToString(CultureInfo.InvariantCulture),
             IsBlocked = user.IsBlocked,
-            Role = user.RoleNavigation.RoleName,
+            Role = (RolesEnum) user.Role,
             ListedCars = new List<CarDto>()
         };
     }
@@ -209,9 +199,7 @@ public class UserService : IUserService
     public async Task<UserDto> UpdateUser(CreateUserDto updateUserDto, int id, CancellationToken cancellationToken)
     {
         var user = await _context.Users
-            .Include(u => u.RoleNavigation)
             .Include(u => u.Cars)
-            .ThenInclude(c => c.StatusNavigation)
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         if (user == null)
             throw new KeyNotFoundException($"No user found with ID {id}.");
@@ -229,22 +217,13 @@ public class UserService : IUserService
             if (emailCheck != null)
                 throw new ArgumentException("An account with this username already exists.");
         }
-
-        Role? role;
-        if (!user.RoleNavigation.RoleName.Equals(updateUserDto.RoleName))
-        {
-            role = await _context.Roles.FirstOrDefaultAsync(r => r.RoleName.Equals(updateUserDto.RoleName), cancellationToken);
-            if (role == null)
-                throw new KeyNotFoundException($"No role with name {updateUserDto.RoleName} found.");
-        }
-        else role = user.RoleNavigation;
         
         user.Email = updateUserDto.Email;
         user.Username = updateUserDto.Username;
         if (updateUserDto.Password != null)
             user.PasswordHash = _passwordHasher.HashPassword(user, updateUserDto.Password);
         
-        user.RoleNavigation = role;
+        user.Role = (int) updateUserDto.Role;
         if (user.IsBlocked != updateUserDto.IsBlocked) user.IsBlocked = updateUserDto.IsBlocked;
 
         _context.Users.Update(user);
@@ -264,7 +243,7 @@ public class UserService : IUserService
                 EngineDisplacement = car.EngineDisplacement,
                 EnginePower = car.EnginePower,
                 Mileage = car.Mileage,
-                Status = car.StatusNavigation.StatusName,
+                Status = (StatusEnum) car.Status,
                 Description = car.Description,
             });
         }
@@ -276,7 +255,7 @@ public class UserService : IUserService
             Email = updateUserDto.Email,
             CreatedAt = user.CreatedAt.ToString(CultureInfo.InvariantCulture),
             IsBlocked = updateUserDto.IsBlocked,
-            Role = role.RoleName,
+            Role = updateUserDto.Role,
             ListedCars = listedCarsDto
         };
     }

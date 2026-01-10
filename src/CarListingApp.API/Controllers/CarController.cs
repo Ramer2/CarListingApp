@@ -109,17 +109,11 @@ public class CarController : ControllerBase
     {
         try
         {
-            var isAdmin = User.IsInRole("Admin");
-
             var email = User.FindFirst(ClaimTypes.Email)?.Value;
-            if (!isAdmin && email == null)
+            if (email == null)
                 return Results.Unauthorized();
 
-            await _carService.DeleteCar(
-                id,
-                email,
-                isAdmin,
-                cancellationToken);
+            await _carService.DeleteCar(id, email, cancellationToken);
 
             return Results.NoContent();
         }

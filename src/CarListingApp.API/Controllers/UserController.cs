@@ -1,4 +1,5 @@
 ﻿using System.Security.Claims;
+using CarListingApp.Models.Models.Enums;
 using CarListingApp.Services.DTOs.User;
 using CarListingApp.Services.Services.UserService;
 using Microsoft.AspNetCore.Authorization;
@@ -117,7 +118,7 @@ public class UserController : ControllerBase
             // only admins can create other admins
             if (User.Identity?.IsAuthenticated == true)
             {
-                if (!User.IsInRole("Admin") && createUserDto.RoleName.Equals("Admin"))
+                if (!User.IsInRole("Admin") && createUserDto.Role == RolesEnum.Admin)
                     return Results.Forbid();
             }
             
@@ -156,7 +157,7 @@ public class UserController : ControllerBase
                 // or tries to change role
                 // or tries to change blocked status
                 if (user.Id != id 
-                    || !user.Role.Equals(createUserDto.RoleName) 
+                    || !user.Role.Equals(createUserDto.Role) 
                     || user.IsBlocked != createUserDto.IsBlocked)
                     return Results.Forbid();
             }

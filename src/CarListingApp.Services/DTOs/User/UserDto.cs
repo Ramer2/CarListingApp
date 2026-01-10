@@ -1,4 +1,5 @@
-﻿using CarListingApp.Services.DTOs.Car;
+﻿using CarListingApp.Models.Models.Enums;
+using CarListingApp.Services.DTOs.Car;
 
 namespace CarListingApp.Services.DTOs.User;
 
@@ -14,7 +15,7 @@ public class UserDto
 
     public bool IsBlocked { get; set; }
 
-    public string Role { get; set; }
+    public RolesEnum Role { get; set; }
 
     public List<CarDto> ListedCars { get; set; } = new();
 }

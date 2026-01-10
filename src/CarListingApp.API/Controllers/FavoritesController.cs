@@ -66,7 +66,6 @@ public class FavoritesController : ControllerBase
         if (email == null)
             return Results.Unauthorized();
 
-        return Results.Ok(
-            await _favoritesService.GetFavorites(email, cancellationToken));
+        return Results.Ok(await _favoritesService.GetFavorites(email, cancellationToken));
     }
 }

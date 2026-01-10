@@ -64,7 +64,6 @@ public class ServiceRecordsService : IServiceRecordsService
         if (requester == null)
             throw new ArgumentException("Requester not found.");
 
-        // Only Admin or the car owner can create
         if (car.SellerNavigation.Id != requester.Id && requester.RoleNavigation.RoleName != "Admin")
             throw new UnauthorizedAccessException("You are not allowed to add service records for this car.");
 
@@ -106,7 +105,6 @@ public class ServiceRecordsService : IServiceRecordsService
         if (requester == null)
             throw new ArgumentException("Requester not found.");
 
-        // Only Admin or the car owner can update
         if (record.CarNavigation.SellerNavigation.Id != requester.Id && requester.RoleNavigation.RoleName != "Admin")
             throw new UnauthorizedAccessException("You are not allowed to update this service record.");
 

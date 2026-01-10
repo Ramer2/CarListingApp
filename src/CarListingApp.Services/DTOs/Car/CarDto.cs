@@ -1,4 +1,6 @@
-﻿namespace CarListingApp.Services.DTOs.Car;
+﻿using CarListingApp.Models.Models.Enums;
+
+namespace CarListingApp.Services.DTOs.Car;
 
 public class CarDto
 {
@@ -24,7 +26,7 @@ public class CarDto
     
     public int SellerId { get; set; }
 
-    public string Status { get; set; }
+    public StatusEnum Status { get; set; }
 
     public string? Description { get; set; }
 }

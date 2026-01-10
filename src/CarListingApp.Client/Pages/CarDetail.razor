@@ -1,5 +1,6 @@
 ﻿@page "/car/{Id:int}"
 @using System.Security.Claims
+@using CarListingApp.Models.Models.Enums
 @using CarListingApp.Services.DTOs.Car
 @using CarListingApp.Services.DTOs.User
 @using CarListingApp.Services.DTOs.ServiceRecord
@@ -30,7 +31,7 @@
         <div class="industrial-card-layout">
             @* LEFT VISUAL COLUMN *@
             <div class="visual-sidebar">
-                <div class="status-badge">@_car.Status.ToUpper()</div>
+                <div class="status-badge">@_car.Status</div>
                 <div class="sidebar-icon">
                     <i class="bi bi-car-front"></i>
                 </div>
@@ -149,7 +150,7 @@
                                 <div class="panel-actions">
                                     <button class="btn-ctrl btn-edit" @onclick="GoToEdit">EDIT_ENTRY</button>
                                     
-                                    @if (_car.Status == "Active")
+                                    @if (_car.Status == StatusEnum.Active)
                                     {
                                         <button class="btn-ctrl btn-sold" @onclick='() => RequestConfirmation("MARK THIS VEHICLE AS SOLD?", MarkAsSold)'>MARK_SOLD</button>
                                     }
@@ -431,7 +432,7 @@
     private async Task MarkAsSold()
     {
         if (_car == null) return;
-        var update = new CreateCarDto { Brand = _car.Brand, Model = _car.Model, Price = _car.Price, Year = _car.Year, StatusName = "Sold" };
+        var update = new CreateCarDto { Brand = _car.Brand, Model = _car.Model, Price = _car.Price, Year = _car.Year, Status = StatusEnum.Sold };
         var res = await Http.PutAsJsonAsync($"api/cars/{Id}", update);
         if (res.IsSuccessStatusCode) Nav.NavigateTo(Nav.Uri, forceLoad: true);
         else { _isError = true; _systemFeedback = "CRITICAL_UPDATE_FAILURE"; }

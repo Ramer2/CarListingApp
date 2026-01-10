@@ -1,4 +1,5 @@
 ﻿@page "/"
+@using CarListingApp.Models.Models.Enums
 @using CarListingApp.Services.DTOs.Car
 @using Microsoft.AspNetCore.Components.Authorization
 @inject HttpClient Http
@@ -47,8 +48,8 @@
                     </div>
                     
                     <h4 style="margin: 5px 0; font-weight: 900;">@car.Brand.ToUpper() @car.Model.ToUpper()</h4>
-                    <span class="status-badge" style="background: @(car.Status == "Active" ? "#00ff00" : "magenta"); color: @(car.Status == "Active" ? "black" : "white");">
-                        @car.Status.ToUpper()
+                    <span class="status-badge" style="background: @(car.Status == StatusEnum.Active ? "#00ff00" : "magenta"); color: @(car.Status == StatusEnum.Active ? "black" : "white");">
+                        @car.Status
                     </span>
                     <div style="font-size: 0.7rem; margin-top: 5px; color: #444;">YEAR: @car.Year // @car.EnginePower HP</div>
                 </div>
@@ -125,7 +126,7 @@
     private string? _toastMessage;
 
     private IEnumerable<CarDto> FilteredCars => _cars?
-        .Where(c => !_showOnlyActive || c.Status == "Active") ?? Enumerable.Empty<CarDto>();
+        .Where(c => !_showOnlyActive || c.Status == StatusEnum.Active) ?? Enumerable.Empty<CarDto>();
 
     protected override async Task OnInitializedAsync()
     {
