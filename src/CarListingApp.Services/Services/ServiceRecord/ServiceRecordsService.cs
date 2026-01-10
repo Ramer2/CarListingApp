@@ -13,59 +13,58 @@ public class ServiceRecordsService : IServiceRecordsService
     {
         _context = context;
     }
-
-    public async Task<List<ServiceRecordDto>> GetAll(int carId, CancellationToken cancellationToken)
+    
+    // helper methods
+    private static ServiceRecordDto ToDto(Models.Models.ServiceRecord sr)
     {
-        var records = await _context.ServiceRecords
-            .Where(sr => sr.Car == carId)
-            .ToListAsync(cancellationToken);
-
-        return records.Select(sr => new ServiceRecordDto
+        return new ServiceRecordDto
         {
             Id = sr.Id,
             MileageAtService = sr.MileageAtService,
             ServiceDate = sr.ServiceDate.ToShortDateString(),
             Grade = sr.Grade,
             CarId = sr.Car
-        }).ToList();
+        };
+    }
+
+    public async Task<List<ServiceRecordDto>> GetAll(int carId, CancellationToken cancellationToken)
+    {
+        return await _context.ServiceRecords
+            .AsNoTracking()
+            .Where(sr => sr.Car == carId)
+            .Select(sr => ToDto(sr))
+            .ToListAsync(cancellationToken);
     }
 
     public async Task<ServiceRecordDto> GetById(int carId, int recordId, CancellationToken cancellationToken)
     {
         var record = await _context.ServiceRecords
+            .AsNoTracking()
             .FirstOrDefaultAsync(sr => sr.Id == recordId && sr.Car == carId, cancellationToken);
 
         if (record == null)
             throw new KeyNotFoundException($"No service record with ID {recordId} found for this car.");
 
-        return new ServiceRecordDto
-        {
-            Id = record.Id,
-            MileageAtService = record.MileageAtService,
-            ServiceDate = record.ServiceDate.ToShortDateString(),
-            Grade = record.Grade,
-            CarId = record.Car
-        };
+        return ToDto(record);
     }
 
     public async Task<ServiceRecordDto> CreateServiceRecord(int carId, CreateServiceRecordDto dto, string requesterEmail, CancellationToken cancellationToken)
     {
         var car = await _context.Cars
-            .Include(c => c.SellerNavigation)
-            .Include(c => c.StatusNavigation)
-            .FirstOrDefaultAsync(c => c.Id == carId, cancellationToken);
-
-        if (car == null)
-            throw new KeyNotFoundException("Car not found.");
+                    .AsNoTracking()
+                    .Where(c => c.Id == carId)
+                    .Select(c => new { c.Id, SellerId = c.SellerNavigation.Id })
+                    .FirstOrDefaultAsync(cancellationToken)
+                        ?? throw new KeyNotFoundException("Car not found.");
 
         var requester = await _context.Users
-            .Include(u => u.RoleNavigation)
-            .FirstOrDefaultAsync(u => u.Email == requesterEmail, cancellationToken);
+                    .AsNoTracking()
+                    .Where(u => u.Email == requesterEmail)
+                    .Select(u => new { u.Id, u.Role })
+                    .FirstOrDefaultAsync(cancellationToken)
+                        ?? throw new ArgumentException("Requester not found.");
 
-        if (requester == null)
-            throw new ArgumentException("Requester not found.");
-
-        if (car.SellerNavigation.Id != requester.Id && requester.RoleNavigation.RoleName != "Admin")
+        if (car.SellerId != requester.Id && requester.Role != (int) RolesEnum.Admin)
             throw new UnauthorizedAccessException("You are not allowed to add service records for this car.");
 
         var record = new Models.Models.ServiceRecord
@@ -79,34 +78,31 @@ public class ServiceRecordsService : IServiceRecordsService
         _context.ServiceRecords.Add(record);
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new ServiceRecordDto
-        {
-            Id = record.Id,
-            MileageAtService = record.MileageAtService,
-            ServiceDate = record.ServiceDate.ToShortDateString(),
-            Grade = record.Grade,
-            CarId = record.Car
-        };
+        return ToDto(record);
     }
 
     public async Task<ServiceRecordDto> UpdateServiceRecord(int carId, int recordId, CreateServiceRecordDto dto, string requesterEmail, CancellationToken cancellationToken)
     {
         var record = await _context.ServiceRecords
-            .Include(sr => sr.CarNavigation)
-                .ThenInclude(c => c.SellerNavigation)
-            .FirstOrDefaultAsync(sr => sr.Id == recordId && sr.Car == carId, cancellationToken);
-
-        if (record == null)
-            throw new KeyNotFoundException("Service record not found.");
+                      .Where(sr => sr.Id == recordId && sr.Car == carId)
+                      .FirstOrDefaultAsync(cancellationToken)
+                  ?? throw new KeyNotFoundException("Service record not found.");
 
         var requester = await _context.Users
-            .Include(u => u.RoleNavigation)
-            .FirstOrDefaultAsync(u => u.Email == requesterEmail, cancellationToken);
+                        .AsNoTracking()
+                        .Where(u => u.Email == requesterEmail)
+                        .Select(u => new { u.Id, u.Role })
+                        .FirstOrDefaultAsync(cancellationToken)
+                    ?? throw new ArgumentException("Requester not found.");
 
-        if (requester == null)
-            throw new ArgumentException("Requester not found.");
-
-        if (record.CarNavigation.SellerNavigation.Id != requester.Id && requester.RoleNavigation.RoleName != "Admin")
+        var car = await _context.Cars
+                      .AsNoTracking()
+                      .Where(c => c.Id == carId)
+                      .Select(c => new { c.Id, SellerId = c.SellerNavigation.Id })
+                      .FirstOrDefaultAsync(cancellationToken)
+                  ?? throw new KeyNotFoundException("Car not found.");
+        
+        if (car.SellerId != requester.Id && requester.Role != (int) RolesEnum.Admin)
             throw new UnauthorizedAccessException("You are not allowed to update this service record.");
 
         record.MileageAtService = dto.MileageAtService;
@@ -115,33 +111,31 @@ public class ServiceRecordsService : IServiceRecordsService
 
         await _context.SaveChangesAsync(cancellationToken);
 
-        return new ServiceRecordDto
-        {
-            Id = record.Id,
-            MileageAtService = record.MileageAtService,
-            ServiceDate = record.ServiceDate.ToShortDateString(),
-            Grade = record.Grade,
-            CarId = record.Car
-        };
+        return ToDto(record);
     }
 
     public async Task DeleteServiceRecord(int carId, int recordId, string requesterEmail, CancellationToken cancellationToken)
     {
         var record = await _context.ServiceRecords
-            .Include(sr => sr.CarNavigation)
-                .ThenInclude(c => c.SellerNavigation)
-            .FirstOrDefaultAsync(sr => sr.Id == recordId && sr.Car == carId, cancellationToken);
-
-        if (record == null)
-            throw new KeyNotFoundException("Service record not found.");
+                     .Where(sr => sr.Id == recordId && sr.Car == carId)
+                     .FirstOrDefaultAsync(cancellationToken)
+                 ?? throw new KeyNotFoundException("Service record not found.");
 
         var requester = await _context.Users
-            .FirstOrDefaultAsync(u => u.Email == requesterEmail, cancellationToken);
+                        .AsNoTracking()
+                        .Where(u => u.Email == requesterEmail)
+                        .Select(u => new { u.Id, u.Role })
+                        .FirstOrDefaultAsync(cancellationToken)
+                    ?? throw new ArgumentException("Requester not found.");
 
-        if (requester == null)
-            throw new ArgumentException("Requester not found.");
-
-        if (!(requester.Role == (int) RolesEnum.Admin) && record.CarNavigation.SellerNavigation.Id != requester.Id)
+        var car = await _context.Cars
+                      .AsNoTracking()
+                      .Where(c => c.Id == carId)
+                      .Select(c => new { c.Id, SellerId = c.SellerNavigation.Id })
+                      .FirstOrDefaultAsync(cancellationToken)
+                  ?? throw new KeyNotFoundException("Car not found.");
+        
+        if (!(requester.Role == (int) RolesEnum.Admin) && car.SellerId != requester.Id)
             throw new UnauthorizedAccessException("You are not allowed to delete this service record.");
 
         _context.ServiceRecords.Remove(record);

@@ -54,7 +54,7 @@ public partial class CarListingContext : DbContext
         {
             entity.ToTable("ServiceRecord");
 
-            entity.Property(e => e.Id).ValueGeneratedNever();
+            entity.Property(e => e.Id).ValueGeneratedOnAdd();
             entity.Property(e => e.ServiceDate).HasColumnType("datetime");
 
             entity.HasOne(d => d.CarNavigation).WithMany(p => p.ServiceRecords)
