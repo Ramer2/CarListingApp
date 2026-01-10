@@ -45,34 +45,57 @@ public class CarService : ICarService
 
     public async Task<List<CarDto>> GetAll(CancellationToken cancellationToken)
     {
-        var cars = await _context.Cars
+        return await _context.Cars
             .AsNoTracking()
-            .Include(c => c.SellerNavigation)
+            .Select(c => new CarDto
+            {
+                Id = c.Id,
+                Price = c.Price,
+                Brand = c.Brand,
+                Model = c.Model,
+                Color = c.Color,
+                Year = c.Year,
+                Vin = c.Vin,
+                EngineDisplacement = c.EngineDisplacement,
+                EnginePower = c.EnginePower,
+                Mileage = c.Mileage,
+                Status = (StatusEnum)c.Status,
+                Description = c.Description,
+                SellerId = c.SellerNavigation.Id
+            })
             .ToListAsync(cancellationToken);
-        var carDtos = new List<CarDto>();
-
-        foreach (var car in cars)
-        {
-            carDtos.Add(ToDto(car));
-        }
-
-        return carDtos;
     }
 
     public async Task<CarDto> GetById(int? id, CancellationToken cancellationToken)
     {
         if (id == null || id < 0)
             throw new ArgumentException("ID must be valid.");
-        
+
         var car = await _context.Cars
             .AsNoTracking()
-            .Include(c => c.SellerNavigation)
-            .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
+            .Where(c => c.Id == id)
+            .Select(c => new CarDto
+            {
+                Id = c.Id,
+                Price = c.Price,
+                Brand = c.Brand,
+                Model = c.Model,
+                Color = c.Color,
+                Year = c.Year,
+                Vin = c.Vin,
+                EngineDisplacement = c.EngineDisplacement,
+                EnginePower = c.EnginePower,
+                Mileage = c.Mileage,
+                Status = (StatusEnum)c.Status,
+                Description = c.Description,
+                SellerId = c.SellerNavigation.Id
+            })
+            .FirstOrDefaultAsync(cancellationToken);
 
         if (car == null)
             throw new KeyNotFoundException($"No car with ID {id} found.");
 
-        return ToDto(car);
+        return car;
     }
 
     public async Task<CarDto> CreateCar(CreateCarDto createCarDto, string sellerEmail, CancellationToken cancellationToken)
@@ -82,10 +105,12 @@ public class CarService : ICarService
         if (seller == null)
             throw new ArgumentException("No such seller was found.");
 
-        var activeCars = await _context.Cars.AsNoTracking().CountAsync(
+        var hasActiveCar = await _context.Cars
+            .AsNoTracking()
+            .AnyAsync(
             c => c.Seller == seller.Id && c.Status == (int)StatusEnum.Active,
             cancellationToken);
-        if (seller.Role == (int) RolesEnum.User && activeCars > 0)
+        if (seller.Role == (int) RolesEnum.User && hasActiveCar)
             throw new ArgumentException("User cannot sell more than one car at a time.");
 
         if (createCarDto.Vin != null)
@@ -143,13 +168,15 @@ public class CarService : ICarService
 
         if (requester.Role == (int) RolesEnum.User)
         {
-            var activeCars = await _context.Cars.AsNoTracking().CountAsync(
+            var hasOtherActiveCar = await _context.Cars
+                .AsNoTracking()
+                .AnyAsync(
                 c => c.Seller == requester.Id
                      && c.Status == (int)StatusEnum.Active
                      && c.Id != car.Id,
                 cancellationToken);
 
-            if (activeCars > 0 && createCarDto.Status == StatusEnum.Active)
+            if (hasOtherActiveCar && createCarDto.Status == StatusEnum.Active)
                 throw new ArgumentException("User cannot have more than one active car.");
         }
 
