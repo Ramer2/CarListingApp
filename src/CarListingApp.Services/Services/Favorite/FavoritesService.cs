@@ -18,20 +18,23 @@ public class FavoritesService : IFavoritesService
     public async Task AddToFavorites(int carId, string userEmail, CancellationToken cancellationToken)
     {
         var user = await _context.Users
-                       .FirstOrDefaultAsync(u => u.Email == userEmail, cancellationToken)
-                   ?? throw new KeyNotFoundException("User not found.");
-
-        var carExists = await _context.Cars
-            .AnyAsync(c => c.Id == carId, cancellationToken);
-
-        if (!carExists)
-            throw new KeyNotFoundException("Car not found.");
+            .Where(u => u.Email == userEmail)
+            .Select(u => new { u.Id })
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new KeyNotFoundException("User not found.");
 
         var alreadyFavorited = await _context.UserFavorites
             .AnyAsync(uf => uf.UserId == user.Id && uf.CarId == carId, cancellationToken);
 
         if (alreadyFavorited)
             throw new ArgumentException("Car already in favorites.");
+
+        var carExists = await _context.Cars
+            .AsNoTracking()
+            .AnyAsync(c => c.Id == carId, cancellationToken);
+
+        if (!carExists)
+            throw new KeyNotFoundException("Car not found.");
 
         _context.UserFavorites.Add(new UserFavorite
         {
@@ -41,12 +44,14 @@ public class FavoritesService : IFavoritesService
 
         await _context.SaveChangesAsync(cancellationToken);
     }
-    
+
     public async Task RemoveFromFavorites(int carId, string userEmail, CancellationToken cancellationToken)
     {
         var user = await _context.Users
-                       .FirstOrDefaultAsync(u => u.Email == userEmail, cancellationToken)
-                   ?? throw new KeyNotFoundException("User not found.");
+            .Where(u => u.Email == userEmail)
+            .Select(u => new { u.Id })
+            .FirstOrDefaultAsync(cancellationToken)
+            ?? throw new KeyNotFoundException("User not found.");
 
         var favorite = await _context.UserFavorites
             .FirstOrDefaultAsync(
