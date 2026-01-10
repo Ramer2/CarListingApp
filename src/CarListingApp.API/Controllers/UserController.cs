@@ -1,5 +1,4 @@
 ﻿using System.Security.Claims;
-using CarListingApp.Models.Models.Enums;
 using CarListingApp.Services.DTOs.User;
 using CarListingApp.Services.Services.UserService;
 using Microsoft.AspNetCore.Authorization;
@@ -31,29 +30,17 @@ public class UserController : ControllerBase
         }
     }
 
-    [Authorize(Roles = "Admin, User, Dealer")]
+    [Authorize(Roles = "Admin,User,Dealer")]
     [HttpGet("{id}")]
-    public async Task<IResult> GetUserById(int? id, CancellationToken cancellationToken)
+    public async Task<IResult> GetUserById(int id, CancellationToken cancellationToken)
     {
         try
         {
-            if (User.IsInRole("Admin"))
-            {
-                return Results.Ok(await _userService.GetUserById(id, cancellationToken));
-            }
-            else
-            {
-                var email = User.FindFirst(ClaimTypes.Email); 
-                if (email == null)
-                    return Results.Problem("Invalid credentials.");
-                
-                var user = await _userService.GetUserByEmail(email.Value, cancellationToken);
-                
-                if (user.Id != id)
-                    return Results.Forbid();
-                
-                return Results.Ok(user);
-            }
+            var requesterEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (requesterEmail == null)
+                return Results.Unauthorized();
+
+            return Results.Ok(await _userService.GetUserById(id, requesterEmail, cancellationToken));
         }
         catch (AccessViolationException)
         {
@@ -67,10 +54,6 @@ public class UserController : ControllerBase
         {
             return Results.BadRequest(ex.Message);
         }
-        catch (Exception ex)
-        {
-            return Results.Problem(ex.Message);
-        }
     }
     
     [Authorize(Roles = "Admin,User,Dealer")]
@@ -79,18 +62,11 @@ public class UserController : ControllerBase
     {
         try
         {
-            if (User.IsInRole("Admin"))
-            {
-                return Results.Ok(await _userService.GetUserByEmail(email, cancellationToken));
-            }
-            else
-            {
-                var tokenEmail = User.FindFirst(ClaimTypes.Email)?.Value ?? User.FindFirst("email")?.Value ?? User.FindFirst("emailaddress")?.Value;
-                if (tokenEmail == null)
-                    return Results.Problem("Invalid credentials.");
+            var requesterEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (requesterEmail == null)
+                return Results.Unauthorized();
 
-                return Results.Ok(await _userService.GetUserByEmail(tokenEmail, cancellationToken));
-            }
+            return Results.Ok(await _userService.GetUserByEmail(email, requesterEmail, cancellationToken));
         }
         catch (AccessViolationException)
         {
@@ -115,15 +91,11 @@ public class UserController : ControllerBase
     {
         try
         {
-            // only admins can create other admins
-            if (User.Identity?.IsAuthenticated == true)
-            {
-                if (!User.IsInRole("Admin") && createUserDto.Role == RolesEnum.Admin)
-                    return Results.Forbid();
-            }
-            
-            var user = await _userService.CreateUser(createUserDto, cancellationToken);
-            return Results.Ok(user);
+            var requesterEmail = User.Identity?.IsAuthenticated == true
+                ? User.FindFirstValue(ClaimTypes.Email)
+                : null;
+
+            return Results.Ok(await _userService.CreateUser(createUserDto, requesterEmail, cancellationToken));
         }
         catch (ArgumentException ex)
         {
@@ -145,24 +117,11 @@ public class UserController : ControllerBase
     {
         try
         {
-            if (!User.IsInRole("Admin"))
-            {
-                var email = User.FindFirst(ClaimTypes.Email); 
-                if (email == null)
-                    return Results.Problem("Invalid credentials.");
-                
-                var user = await _userService.GetUserByEmail(email.Value, cancellationToken);
-                
-                // if different user
-                // or tries to change role
-                // or tries to change blocked status
-                if (user.Id != id 
-                    || !user.Role.Equals(createUserDto.Role) 
-                    || user.IsBlocked != createUserDto.IsBlocked)
-                    return Results.Forbid();
-            }
+            var requesterEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (requesterEmail == null)
+                return Results.Unauthorized();
             
-            return Results.Ok(await _userService.UpdateUser(createUserDto, id, cancellationToken));
+            return Results.Ok(await _userService.UpdateUser(createUserDto, id, requesterEmail, cancellationToken));
         }
         catch (ArgumentException ex)
         {
@@ -184,20 +143,11 @@ public class UserController : ControllerBase
     {
         try
         {
-            if (!User.IsInRole("Admin"))
-            {
-                var email = User.FindFirst(ClaimTypes.Email); 
-                if (email == null)
-                    return Results.Problem("Invalid credentials.");
-                
-                var user = await _userService.GetUserByEmail(email.Value, cancellationToken);
-                
-                // if different user
-                if (user.Id != id)
-                    return Results.Forbid();
-            }
+            var requesterEmail = User.FindFirst(ClaimTypes.Email)?.Value;
+            if (requesterEmail == null)
+                return Results.Unauthorized();
             
-            await _userService.DeleteUser(id, cancellationToken);
+            await _userService.DeleteUser(id, requesterEmail, cancellationToken);
             return Results.NoContent();
         }
         catch (KeyNotFoundException ex)

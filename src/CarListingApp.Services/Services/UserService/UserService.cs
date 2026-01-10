@@ -18,6 +18,15 @@ public class UserService : IUserService
     {
         _context = context; 
     }
+    
+    // helper methods
+    private async Task<User> GetRequester(string email, CancellationToken ct)
+    {
+        var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == email, ct);
+        if (user == null)
+            throw new AccessViolationException("Invalid credentials.");
+        return user;
+    }
 
     public async Task<List<UserDto>> GetAll(CancellationToken cancellationToken)
     {
@@ -64,10 +73,18 @@ public class UserService : IUserService
         return userDtos;
     }
 
-    public async Task<UserDto> GetUserById(int? id, CancellationToken cancellationToken)
+    public async Task<UserDto> GetUserById(int id, string requesterEmail, CancellationToken cancellationToken)
     {
-        if (id == null || id < 0)
+        if (id < 0)
             throw new ArgumentException("Invalid ID.");
+
+        var requester = await GetRequester(requesterEmail, cancellationToken);
+
+        if ((RolesEnum)requester.Role != RolesEnum.Admin)
+        {
+            if (requester.Id != id)
+                throw new AccessViolationException();
+        }
 
         var user = await _context.Users
             .Where(u => u.Id == id)
@@ -109,10 +126,18 @@ public class UserService : IUserService
         };
     }
 
-    public async Task<UserDto> GetUserByEmail(string email, CancellationToken cancellationToken)
+    public async Task<UserDto> GetUserByEmail(string email, string requesterEmail, CancellationToken cancellationToken)
     {
-        if (string.IsNullOrEmpty(email))
+        if (string.IsNullOrWhiteSpace(email))
             throw new ArgumentException("Email must be valid.");
+
+        var requester = await GetRequester(requesterEmail, cancellationToken);
+
+        if ((RolesEnum)requester.Role != RolesEnum.Admin)
+        {
+            if (!requester.Email.Equals(email))
+                throw new AccessViolationException();
+        }
         
         var user = await _context.Users
             .Where(u => u.Email.Equals(email))
@@ -154,8 +179,15 @@ public class UserService : IUserService
         };
     }
 
-    public async Task<UserDto> CreateUser(CreateUserDto createUserDto, CancellationToken cancellationToken)
+    public async Task<UserDto> CreateUser(CreateUserDto createUserDto, string? requesterEmail, CancellationToken cancellationToken)
     {
+        if (createUserDto.Role == RolesEnum.Admin && requesterEmail != null)
+        {
+            var requester = await GetRequester(requesterEmail, cancellationToken);
+            if ((RolesEnum)requester.Role != RolesEnum.Admin)
+                throw new AccessViolationException();
+        }
+        
         if (string.IsNullOrEmpty(createUserDto.Password))
             throw new ArgumentException("Password must be valid.");
         
@@ -184,6 +216,9 @@ public class UserService : IUserService
         var user = await _context.Users
             .FirstOrDefaultAsync(u => u.Email.Equals(createUserDto.Email), cancellationToken);
         
+        if (user == null)
+            throw new KeyNotFoundException($"User with email {createUserDto.Email} not found.");
+        
         return new UserDto
         {
             Id = user.Id,
@@ -196,8 +231,18 @@ public class UserService : IUserService
         };
     }
 
-    public async Task<UserDto> UpdateUser(CreateUserDto updateUserDto, int id, CancellationToken cancellationToken)
+    public async Task<UserDto> UpdateUser(CreateUserDto updateUserDto, int id, string requesterEmail, CancellationToken cancellationToken)
     {
+        var requester = await GetRequester(requesterEmail, cancellationToken);
+
+        if ((RolesEnum)requester.Role != RolesEnum.Admin)
+        {
+            if (requester.Id != id
+                || requester.Role != (int) updateUserDto.Role
+                || requester.IsBlocked != updateUserDto.IsBlocked)
+                throw new AccessViolationException();
+        }
+        
         var user = await _context.Users
             .Include(u => u.Cars)
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
@@ -260,8 +305,13 @@ public class UserService : IUserService
         };
     }
 
-    public async Task DeleteUser(int? id, CancellationToken cancellationToken)
+    public async Task DeleteUser(int id, string requesterEmail, CancellationToken cancellationToken)
     {
+        var requester = await GetRequester(requesterEmail, cancellationToken);
+
+        if ((RolesEnum)requester.Role != RolesEnum.Admin && requester.Id != id)
+            throw new AccessViolationException();
+        
         var user = await _context.Users
             .Include(u => u.UserFavorites)
             .Include(u => u.Cars)

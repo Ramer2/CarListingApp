@@ -239,11 +239,11 @@
 
         try 
         {
-            var update = new { 
-                _selectedUser!.Email, 
-                _selectedUser.Username, 
-                _selectedUser.IsBlocked, 
-                RoleName = _selectedUser.Role 
+            var update = new CreateUserDto { 
+                Email = _selectedUser!.Email, 
+                Username = _selectedUser.Username, 
+                IsBlocked = _selectedUser.IsBlocked, 
+                Role = _selectedUser.Role 
             };
             var res = await Http.PutAsJsonAsync($"api/users/{_selectedUser.Id}", update);
             if (res.IsSuccessStatusCode)

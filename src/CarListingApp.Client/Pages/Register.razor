@@ -1,5 +1,7 @@
 ﻿@page "/register"
+@using CarListingApp.Models.Models.Enums
 @using System.ComponentModel.DataAnnotations
+@using CarListingApp.Services.DTOs.User
 @inject HttpClient Http
 @inject NavigationManager Nav
 
@@ -18,16 +20,20 @@
             <EditForm Model="_regModel" OnValidSubmit="HandleRegister" style="display: flex; flex-direction: column; gap: 20px;">
                 <DataAnnotationsValidator />
 
-                @* ROLE SELECTION *@
+                @* ROLE SELECTION USING ENUM *@
                 <div>
                     <label style="display: block; font-weight: 900; font-size: 0.7rem; margin-bottom: 12px;">ACCOUNT_TYPE</label>
                     <div style="display: flex; gap: 30px;">
-                        <label class="radio-container">
-                            <input type="radio" name="role" value="User" checked="@(_regModel.RoleName == "User")" @onchange="@(() => _regModel.RoleName = "User")" />
+                        <label class="radio-container" style="cursor: pointer; font-weight: 700; font-size: 0.8rem;">
+                            <input type="radio" name="role" 
+                                   checked="@(_regModel.Role == RolesEnum.User)" 
+                                   @onchange="@(() => _regModel.Role = RolesEnum.User)" />
                             <span class="custom-radio"></span> INDIVIDUAL
                         </label>
-                        <label class="radio-container">
-                            <input type="radio" name="role" value="Dealer" checked="@(_regModel.RoleName == "Dealer")" @onchange="@(() => _regModel.RoleName = "Dealer")" />
+                        <label class="radio-container" style="cursor: pointer; font-weight: 700; font-size: 0.8rem;">
+                            <input type="radio" name="role" 
+                                   checked="@(_regModel.Role == RolesEnum.Dealer)" 
+                                   @onchange="@(() => _regModel.Role = RolesEnum.Dealer)" />
                             <span class="custom-radio"></span> DEALER
                         </label>
                     </div>
@@ -35,23 +41,25 @@
 
                 <div class="input-group">
                     <label style="display: block; font-weight: 900; font-size: 0.7rem; margin-bottom: 8px;">USERNAME</label>
-                    <input @bind="_regModel.Username" class="custom-input" placeholder="ALPHA_USER_01" />
+                    <InputText @bind-Value="_regModel.Username" class="custom-input" placeholder="ALPHA_USER_01" style="width: 100%; border: 2px solid black; padding: 12px; font-weight: 700;" />
                     <ValidationMessage For="@(() => _regModel.Username)" class="user-error" />
                 </div>
 
                 <div class="input-group">
                     <label style="display: block; font-weight: 900; font-size: 0.7rem; margin-bottom: 8px;">EMAIL_ADDRESS</label>
-                    <input @bind="_regModel.Email" type="email" class="custom-input" placeholder="user@domain.com" />
+                    <InputText @bind-Value="_regModel.Email" type="email" class="custom-input" placeholder="user@domain.com" style="width: 100%; border: 2px solid black; padding: 12px; font-weight: 700;" />
                     <ValidationMessage For="@(() => _regModel.Email)" class="user-error" />
                 </div>
 
                 <div class="input-group">
                     <label style="display: block; font-weight: 900; font-size: 0.7rem; margin-bottom: 8px;">SECURITY_KEY (PASSWORD)</label>
-                    <input @bind="_regModel.Password" type="password" class="custom-input" placeholder="••••••••" />
+                    <InputText @bind-Value="_regModel.Password" type="password" class="custom-input" placeholder="••••••••" style="width: 100%; border: 2px solid black; padding: 12px; font-weight: 700;" />
                     <ValidationMessage For="@(() => _regModel.Password)" class="user-error" />
                 </div>
 
-                <button type="submit" class="btn-black" style="margin-top: 10px; padding: 18px;">EXECUTE_REGISTRATION</button>
+                <button type="submit" class="btn-black" style="margin-top: 10px; padding: 18px; background: black; color: white; border: none; font-weight: 900; cursor: pointer;">
+                    EXECUTE_REGISTRATION
+                </button>
             </EditForm>
         </div>
 
@@ -63,66 +71,40 @@
 
 <style>
     .user-error { color: #ff0055; font-size: 0.65rem; font-weight: 900; margin-top: 5px; display: block; text-transform: uppercase; }
+    .radio-container input { margin-right: 8px; }
 </style>
 
 @code {
-    private RegisterDto _regModel = new() { RoleName = "User" };
+    private CreateUserDto _regModel = new() { Role = RolesEnum.User };
     private string? _userErrorMessage;
-
-    private bool ValidateData()
-    {
-        if (string.IsNullOrWhiteSpace(_regModel.Username) || _regModel.Username.Length < 3)
-        {
-            _userErrorMessage = "VALIDATION_ERROR: USERNAME_INSUFFICIENT_LENGTH";
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(_regModel.Email) || !_regModel.Email.Contains("@"))
-        {
-            _userErrorMessage = "VALIDATION_ERROR: INVALID_EMAIL_STRUCTURE";
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(_regModel.Password) || _regModel.Password.Length < 6)
-        {
-            _userErrorMessage = "VALIDATION_ERROR: SECURITY_KEY_STRENGTH_LOW";
-            return false;
-        }
-
-        if (string.IsNullOrWhiteSpace(_regModel.RoleName))
-        {
-            _userErrorMessage = "VALIDATION_ERROR: ACCOUNT_TYPE_NOT_DEFINED";
-            return false;
-        }
-
-        return true;
-    }
 
     private async Task HandleRegister()
     {
         _userErrorMessage = null;
 
-        if (!ValidateData())
-        {
-            return;
-        }
-
         try 
         {
-            var response = await Http.PostAsJsonAsync("api/users", _regModel);
-            if (response.IsSuccessStatusCode) Nav.NavigateTo("/login");
-            else _userErrorMessage = "Information rejected. Possible duplicate identifier or weak password.";
+            var payload = new CreateUserDto {
+                Username = _regModel.Username,
+                Email = _regModel.Email,
+                Password = _regModel.Password,
+                Role = _regModel.Role
+            };
+
+            var response = await Http.PostAsJsonAsync("api/users", payload);
+            
+            if (response.IsSuccessStatusCode) 
+            {
+                Nav.NavigateTo("/login");
+            }
+            else 
+            {
+                _userErrorMessage = "Information rejected. Possible duplicate identifier or weak password.";
+            }
         }
         catch 
         {
             _userErrorMessage = "Terminal failure. Unable to reach registration server.";
         }
-    }
-
-    public class RegisterDto {
-        [Required] public string Username { get; set; } = "";
-        [Required, EmailAddress] public string Email { get; set; } = "";
-        [Required, MinLength(6)] public string Password { get; set; } = "";
-        public string RoleName { get; set; } = "";
     }
 }
