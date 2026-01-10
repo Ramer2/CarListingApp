@@ -12,5 +12,5 @@ public interface IServiceRecordsService
 
     Task<ServiceRecordDto> UpdateServiceRecord(int carId, int recordId, CreateServiceRecordDto dto, string requesterEmail, CancellationToken cancellationToken);
 
-    Task DeleteServiceRecord(int carId, int recordId, string requesterEmail, bool isAdmin, CancellationToken cancellationToken);
+    Task DeleteServiceRecord(int carId, int recordId, string requesterEmail, CancellationToken cancellationToken);
 }

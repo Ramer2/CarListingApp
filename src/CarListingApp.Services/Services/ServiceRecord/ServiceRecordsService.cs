@@ -1,4 +1,5 @@
 ﻿using CarListingApp.DAL.DBContext;
+using CarListingApp.Models.Models.Enums;
 using CarListingApp.Services.DTOs.ServiceRecord;
 using Microsoft.EntityFrameworkCore;
 
@@ -124,7 +125,7 @@ public class ServiceRecordsService : IServiceRecordsService
         };
     }
 
-    public async Task DeleteServiceRecord(int carId, int recordId, string requesterEmail, bool isAdmin, CancellationToken cancellationToken)
+    public async Task DeleteServiceRecord(int carId, int recordId, string requesterEmail, CancellationToken cancellationToken)
     {
         var record = await _context.ServiceRecords
             .Include(sr => sr.CarNavigation)
@@ -140,7 +141,7 @@ public class ServiceRecordsService : IServiceRecordsService
         if (requester == null)
             throw new ArgumentException("Requester not found.");
 
-        if (!isAdmin && record.CarNavigation.SellerNavigation.Id != requester.Id)
+        if (!(requester.Role == (int) RolesEnum.Admin) && record.CarNavigation.SellerNavigation.Id != requester.Id)
             throw new UnauthorizedAccessException("You are not allowed to delete this service record.");
 
         _context.ServiceRecords.Remove(record);
