@@ -201,8 +201,8 @@
     {
         try 
         {
-            _users = await Http.GetFromJsonAsync<List<UserDto>>("users");
-            _cars = await Http.GetFromJsonAsync<List<CarDto>>("cars");
+            _users = await Http.GetFromJsonAsync<List<UserDto>>("api/users");
+            _cars = await Http.GetFromJsonAsync<List<CarDto>>("api/cars");
         } 
         catch { _statusMessage = "SYNC_FAILED_UNAUTHORIZED"; _isError = true; }
     }
@@ -245,7 +245,7 @@
                 _selectedUser.IsBlocked, 
                 RoleName = _selectedUser.Role 
             };
-            var res = await Http.PutAsJsonAsync($"users/{_selectedUser.Id}", update);
+            var res = await Http.PutAsJsonAsync($"api/users/{_selectedUser.Id}", update);
             if (res.IsSuccessStatusCode)
             {
                 _statusMessage = "USER_NODE_UPDATED";

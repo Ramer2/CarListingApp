@@ -179,7 +179,7 @@ else
             }
 
             var encodedEmail = Uri.EscapeDataString(userEmail);
-            var response = await Http.GetAsync($"users/by-email/{encodedEmail}");
+            var response = await Http.GetAsync($"api/users/by-email/{encodedEmail}");
 
             if (response.IsSuccessStatusCode)
             {
@@ -254,7 +254,7 @@ else
             RoleName = _fullUserData.Role
         };
 
-        var response = await Http.PutAsJsonAsync($"users/{_fullUserData.Id}", updateDto);
+        var response = await Http.PutAsJsonAsync($"api/users/{_fullUserData.Id}", updateDto);
         
         if (response.IsSuccessStatusCode)
         {
@@ -285,7 +285,7 @@ else
     {
         if (!ValidateDeletionState()) return;
 
-        var response = await Http.DeleteAsync($"users/{_fullUserData!.Id}");
+        var response = await Http.DeleteAsync($"api/users/{_fullUserData!.Id}");
         
         if (response.IsSuccessStatusCode)
         {

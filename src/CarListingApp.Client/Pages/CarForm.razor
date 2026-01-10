@@ -124,7 +124,7 @@
             return;
         }
 
-        var response = await Http.PostAsJsonAsync("cars", _carModel);
+        var response = await Http.PostAsJsonAsync("api/cars", _carModel);
         if (response.IsSuccessStatusCode) Nav.NavigateTo("/");
         else 
         {

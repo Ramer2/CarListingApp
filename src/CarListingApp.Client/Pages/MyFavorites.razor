@@ -69,7 +69,7 @@
     {
         _favorites = null;
         try {
-            var response = await Http.GetAsync("favorites");
+            var response = await Http.GetAsync("api/favorites");
             if (response.IsSuccessStatusCode)
             {
                 _favorites = await response.Content.ReadFromJsonAsync<List<CarDto>>();
@@ -85,7 +85,7 @@
 
     private async Task Remove(int carId)
     {
-        var res = await Http.DeleteAsync($"favorites/{carId}");
+        var res = await Http.DeleteAsync($"api/favorites/{carId}");
         if (res.IsSuccessStatusCode)
         {
             await LoadData();

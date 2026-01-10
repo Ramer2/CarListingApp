@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace CarListingApp.API.Controllers;
 
 [ApiController]
+[Route("api/favorites")]
 public class FavoritesController : ControllerBase
 {
     private readonly IFavoritesService _favoritesService;
@@ -16,7 +17,7 @@ public class FavoritesController : ControllerBase
     }
 
     [Authorize(Roles = "Admin, User, Dealer")]
-    [HttpPost("favorites")]
+    [HttpPost("")]
     public async Task<IResult> AddToFavorites([FromBody] int carId, CancellationToken cancellationToken)
     {
         try
@@ -39,7 +40,7 @@ public class FavoritesController : ControllerBase
     }
     
     [Authorize(Roles = "Admin, User, Dealer")]
-    [HttpDelete("favorites/{carId}")]
+    [HttpDelete("{carId}")]
     public async Task<IResult> RemoveFromFavorites(int carId, CancellationToken cancellationToken)
     {
         try
@@ -58,7 +59,7 @@ public class FavoritesController : ControllerBase
     }
 
     [Authorize(Roles = "Admin, User, Dealer")]
-    [HttpGet("favorites")]
+    [HttpGet("")]
     public async Task<IResult> GetFavorites(CancellationToken cancellationToken)
     {
         var email = User.FindFirst(ClaimTypes.Email)?.Value;

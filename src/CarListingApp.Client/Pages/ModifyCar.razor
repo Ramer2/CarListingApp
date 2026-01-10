@@ -119,7 +119,7 @@
     protected override async Task OnInitializedAsync()
     {
         try {
-            var car = await Http.GetFromJsonAsync<CarDto>($"cars/{Id}");
+            var car = await Http.GetFromJsonAsync<CarDto>($"api/cars/{Id}");
             if (car != null) {
                 _carModel = new CreateCarDto {
                     Brand = car.Brand, Model = car.Model, Price = car.Price, Year = car.Year,
@@ -175,7 +175,7 @@
             return;
         }
         
-        var res = await Http.PutAsJsonAsync($"cars/{Id}", _carModel);
+        var res = await Http.PutAsJsonAsync($"api/cars/{Id}", _carModel);
         if (res.IsSuccessStatusCode) {
             _isError = false;
             _statusMessage = "DATABASE_SYNCHRONIZED_SUCCESSFULLY";

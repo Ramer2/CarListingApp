@@ -109,7 +109,7 @@
 
         try 
         {
-            var response = await Http.PostAsJsonAsync("users", _regModel);
+            var response = await Http.PostAsJsonAsync("api/users", _regModel);
             if (response.IsSuccessStatusCode) Nav.NavigateTo("/login");
             else _userErrorMessage = "Information rejected. Possible duplicate identifier or weak password.";
         }

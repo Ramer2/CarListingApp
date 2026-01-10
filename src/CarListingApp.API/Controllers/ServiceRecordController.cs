@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace CarListingApp.API.Controllers;
 
 [ApiController]
-[Route("cars/{carId:int}/service-records")]
+[Route("api/cars/{carId:int}/service-records")]
 public class ServiceRecordController : ControllerBase
 {
     private readonly IServiceRecordsService _serviceRecordService;

@@ -306,7 +306,7 @@
     protected override async Task OnInitializedAsync()
     {
         try {
-            _car = await Http.GetFromJsonAsync<CarDto>($"cars/{Id}");
+            _car = await Http.GetFromJsonAsync<CarDto>($"api/cars/{Id}");
             await LoadServiceRecords();
             
             var authState = await AuthStateProvider.GetAuthenticationStateAsync();
@@ -317,12 +317,12 @@
                 if (email != null)
                 {
                     try {
-                        var userProfile = await Http.GetFromJsonAsync<UserDto>($"users/by-email/{Uri.EscapeDataString(email)}");
+                        var userProfile = await Http.GetFromJsonAsync<UserDto>($"api/users/by-email/{Uri.EscapeDataString(email)}");
                         _currentUserId = userProfile?.Id;
                     } catch { }
                 }
 
-                var favs = await Http.GetFromJsonAsync<List<CarDto>>("favorites");
+                var favs = await Http.GetFromJsonAsync<List<CarDto>>("api/favorites");
                 _isFavorited = favs?.Any(f => f.Id == Id) ?? false;
             }
         } catch { Nav.NavigateTo("/"); }
@@ -330,7 +330,7 @@
 
     private async Task LoadServiceRecords()
     {
-        _serviceRecords = await Http.GetFromJsonAsync<List<ServiceRecordDto>>($"cars/{Id}/service-records");
+        _serviceRecords = await Http.GetFromJsonAsync<List<ServiceRecordDto>>($"api/cars/{Id}/service-records");
     }
 
     private void OpenCreateRecord()
@@ -358,9 +358,9 @@
         {
             HttpResponseMessage res;
             if (_editingRecordId == null)
-                res = await Http.PostAsJsonAsync($"cars/{Id}/service-records", _recordModel);
+                res = await Http.PostAsJsonAsync($"api/cars/{Id}/service-records", _recordModel);
             else
-                res = await Http.PutAsJsonAsync($"cars/{Id}/service-records/{_editingRecordId}", _recordModel);
+                res = await Http.PutAsJsonAsync($"api/cars/{Id}/service-records/{_editingRecordId}", _recordModel);
 
             if (res.IsSuccessStatusCode)
             {
@@ -381,7 +381,7 @@
 
     private async Task DeleteRecord(int recordId)
     {
-        var res = await Http.DeleteAsync($"cars/{Id}/service-records/{recordId}");
+        var res = await Http.DeleteAsync($"api/cars/{Id}/service-records/{recordId}");
         if (res.IsSuccessStatusCode)
         {
             _systemFeedback = "RECORD_PURGED_SUCCESSFULLY";
@@ -397,12 +397,12 @@
         {
             if (_isFavorited)
             {
-                var res = await Http.DeleteAsync($"favorites/{Id}");
+                var res = await Http.DeleteAsync($"api/favorites/{Id}");
                 if (res.IsSuccessStatusCode) { _isFavorited = false; _systemFeedback = "LISTING_REMOVED_FROM_VAULT"; _isError = false; }
             }
             else
             {
-                var res = await Http.PostAsJsonAsync("favorites", Id);
+                var res = await Http.PostAsJsonAsync("api/favorites", Id);
                 if (res.IsSuccessStatusCode) { _isFavorited = true; _systemFeedback = "LISTING_SECURED_IN_VAULT"; _isError = false; }
             }
             StateHasChanged();
@@ -432,14 +432,14 @@
     {
         if (_car == null) return;
         var update = new CreateCarDto { Brand = _car.Brand, Model = _car.Model, Price = _car.Price, Year = _car.Year, StatusName = "Sold" };
-        var res = await Http.PutAsJsonAsync($"cars/{Id}", update);
+        var res = await Http.PutAsJsonAsync($"api/cars/{Id}", update);
         if (res.IsSuccessStatusCode) Nav.NavigateTo(Nav.Uri, forceLoad: true);
         else { _isError = true; _systemFeedback = "CRITICAL_UPDATE_FAILURE"; }
     }
 
     private async Task DeleteCar()
     {
-        var res = await Http.DeleteAsync($"cars/{Id}");
+        var res = await Http.DeleteAsync($"api/cars/{Id}");
         if (res.IsSuccessStatusCode) Nav.NavigateTo("/");
         else { _isError = true; _systemFeedback = "DELETION_REJECTED_BY_CORE"; }
     }

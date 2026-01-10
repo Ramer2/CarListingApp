@@ -130,7 +130,7 @@
     protected override async Task OnInitializedAsync()
     {
         try {
-            _cars = await Http.GetFromJsonAsync<List<CarDto>>("cars");
+            _cars = await Http.GetFromJsonAsync<List<CarDto>>("api/cars");
             await LoadFavorites();
         } catch {
             _cars = new();
@@ -148,7 +148,7 @@
         if (authState.User.Identity?.IsAuthenticated ?? false)
         {
             try {
-                _userFavorites = await Http.GetFromJsonAsync<List<CarDto>>("favorites");
+                _userFavorites = await Http.GetFromJsonAsync<List<CarDto>>("api/favorites");
             } catch { _userFavorites = new(); }
         }
     }
@@ -159,7 +159,7 @@
     {
         if (IsFavorited(carId))
         {
-            var res = await Http.DeleteAsync($"favorites/{carId}");
+            var res = await Http.DeleteAsync($"api/favorites/{carId}");
             if (res.IsSuccessStatusCode)
             {
                 _userFavorites?.RemoveAll(f => f.Id == carId);
@@ -168,7 +168,7 @@
         }
         else
         {
-            var res = await Http.PostAsJsonAsync("favorites", carId);
+            var res = await Http.PostAsJsonAsync("api/favorites", carId);
             if (res.IsSuccessStatusCode)
             {
                 _userFavorites?.Add(new CarDto { Id = carId });
