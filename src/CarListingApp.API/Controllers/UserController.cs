@@ -86,6 +86,7 @@ public class UserController : ControllerBase
         }
     }
     
+    [Authorize(Roles = "Admin")]
     [HttpPost("")]
     public async Task<IResult> CreateUser([FromBody] CreateUserDto createUserDto, CancellationToken cancellationToken)
     {

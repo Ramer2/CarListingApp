@@ -1,10 +1,7 @@
-﻿using CarListingApp.DAL.DBContext;
-using CarListingApp.Models.Models;
-using CarListingApp.Services.DTOs.Auth;
-using CarListingApp.Services.Services.TokenService;
-using Microsoft.AspNetCore.Identity;
+﻿using CarListingApp.Services.DTOs.Auth;
+using CarListingApp.Services.DTOs.User;
+using CarListingApp.Services.Services.Auth;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
 
 namespace CarListingApp.API.Controllers;
 
@@ -12,57 +9,51 @@ namespace CarListingApp.API.Controllers;
 [Route("api/auth")]
 public class AuthController : ControllerBase
 {
-    private readonly ITokenService _tokenService;
-    private readonly PasswordHasher<User> _passwordHasher = new();
-    private readonly CarListingContext _context;
+    private readonly IAuthService _authService;
 
-    public AuthController(ITokenService tokenService, CarListingContext context)
+    public AuthController(IAuthService authService)
     {
-        _tokenService = tokenService;
-        _context = context;
+        _authService = authService;
     }
 
-    [HttpPost]
-    [Route("login")]
+    [HttpPost("login")]
     public async Task<IResult> Login([FromBody] LoginUserDto userDto, CancellationToken cancellationToken)
     {
         try
         {
-            if (userDto.Email == null && userDto.Username == null)
-                return Results.BadRequest("Email or username is required.");
+            return Results.Ok(await _authService.Login(userDto, cancellationToken));
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
+        catch (AccessViolationException ex)
+        {
+            return Results.Unauthorized();
+        }
+        catch (Exception ex)
+        {
+            return Results.Problem(ex.Message);
+        }
+    }
 
-            User? user;
-            
-            if (userDto.Email != null)
-            {
-                user = await _context.Users
-                    .Include(u => u.RoleNavigation)
-                    .FirstOrDefaultAsync(u => u.Email.Equals(userDto.Email), cancellationToken);
-            }
-            else
-            {
-                user = await _context.Users
-                    .Include(u => u.RoleNavigation)
-                    .FirstOrDefaultAsync(u => u.Username.Equals(userDto.Username), cancellationToken);
-            }
-            
-            if (user == null)
-                return Results.Unauthorized();
-
-            var verification = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, userDto.Password);
-            if (verification == PasswordVerificationResult.Failed)
-                return Results.Unauthorized();
-
-            var token = new TokenDto
-            {
-                AccessToken = _tokenService.GenerateToken(
-                    user.Username,
-                    user.RoleNavigation.RoleName,
-                    user.Email)
-            };
-            
-            return Results.Ok(token);
-        } catch (Exception ex)
+    [HttpPost("register")]
+    public async Task<IResult> Register([FromBody] CreateUserDto createUserDto, CancellationToken cancellationToken)
+    {
+        try
+        {
+            await _authService.Register(createUserDto, cancellationToken);
+            return Results.Created();
+        }
+        catch (ArgumentException ex)
+        {
+            return Results.BadRequest(ex.Message);
+        }
+        catch (AccessViolationException ex)
+        {
+            return Results.Unauthorized();
+        }
+        catch (Exception ex)
         {
             return Results.Problem(ex.Message);
         }

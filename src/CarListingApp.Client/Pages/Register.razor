@@ -91,7 +91,7 @@
                 Role = _regModel.Role
             };
 
-            var response = await Http.PostAsJsonAsync("api/users", payload);
+            var response = await Http.PostAsJsonAsync("api/auth/register", payload);
             
             if (response.IsSuccessStatusCode) 
             {
