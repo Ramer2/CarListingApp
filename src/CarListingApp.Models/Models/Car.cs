@@ -4,7 +4,7 @@ public partial class Car
 {
     public int Id { get; set; }
 
-    public double Price { get; set; }
+    public decimal Price { get; set; }
 
     public string Brand { get; set; } = null!;
 
@@ -16,9 +16,9 @@ public partial class Car
 
     public string? Vin { get; set; }
 
-    public double? EngineDisplacement { get; set; }
+    public decimal? EngineDisplacement { get; set; }
 
-    public double? EnginePower { get; set; }
+    public int? EnginePower { get; set; }
 
     public int? Mileage { get; set; }
 

@@ -12,6 +12,6 @@ public class CreateServiceRecordDto
     public DateTime ServiceDate { get; set; }
 
     [Required]
-    [Range(0, 5)]
-    public double Grade { get; set; }
+    [Range(0.0, 5.0)]
+    public decimal Grade { get; set; }
 }

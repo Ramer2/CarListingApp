@@ -40,7 +40,7 @@ public class UserService : IUserService
             CreatedAt = user.CreatedAt.ToString(CultureInfo.InvariantCulture),
             IsBlocked = user.IsBlocked,
             Role = (RolesEnum) user.Role,
-            ListedCars = user.Cars?.Select(ToCarDto).ToList() ?? new List<CarDto>()
+            ListedCars = user.Cars.Select(ToCarDto).ToList()
         };
     }
     

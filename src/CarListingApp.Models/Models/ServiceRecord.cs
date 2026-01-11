@@ -8,7 +8,7 @@ public partial class ServiceRecord
 
     public DateTime ServiceDate { get; set; }
 
-    public double Grade { get; set; }
+    public decimal Grade { get; set; }
 
     public int Car { get; set; }
 

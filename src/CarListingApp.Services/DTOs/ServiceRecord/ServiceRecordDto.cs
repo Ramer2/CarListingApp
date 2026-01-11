@@ -8,7 +8,7 @@ public class ServiceRecordDto
     
     public string ServiceDate { get; set; }
     
-    public double Grade { get; set; }
+    public decimal Grade { get; set; }
     
     public int CarId { get; set; }
 }

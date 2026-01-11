@@ -7,7 +7,7 @@ public class CreateCarDto
 {
     [Required]
     [Range(1, double.MaxValue)]
-    public double Price { get; set; }
+    public decimal Price { get; set; }
     
     [Required]
     public string Brand { get; set; } = null!;
@@ -24,10 +24,10 @@ public class CreateCarDto
     public string? Vin { get; set; }
     
     [Range(0, double.MaxValue)]
-    public double? EngineDisplacement { get; set; }
+    public decimal? EngineDisplacement { get; set; }
     
     [Range(0, double.MaxValue)]
-    public double? EnginePower { get; set; }
+    public int? EnginePower { get; set; }
 
     [Range(0, double.MaxValue)]
     public int? Mileage { get; set; }

@@ -28,7 +28,7 @@ builder.Services.AddCors(options =>
 var jwtConfigData = builder.Configuration.GetSection("Jwt");
 
 var connectionString = builder.Configuration.GetConnectionString("CarListingDB");
-builder.Services.AddDbContext<CarListingContext>(options => options.UseSqlite(connectionString));
+builder.Services.AddDbContext<CarListingContext>(options => options.UseSqlServer(connectionString));
 
 builder.Services.Configure<JwtOptions>(jwtConfigData);
 
