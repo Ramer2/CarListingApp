@@ -2,6 +2,10 @@
 using CarListingApp.Models.Models;
 using CarListingApp.Models.Models.Enums;
 using CarListingApp.Services.DTOs.Car;
+using CarListingApp.Services.Exceptions.Auth;
+using CarListingApp.Services.Exceptions.Car;
+using CarListingApp.Services.Exceptions.User;
+using CarListingApp.Services.Exceptions.Validation;
 using Microsoft.EntityFrameworkCore;
 
 namespace CarListingApp.Services.Services.CarService;
@@ -16,13 +20,15 @@ public class CarService : ICarService
     }
     
     // helper methods
-    private async Task<User> GetRequester(string email, CancellationToken ct)
+    private async Task<User> GetRequester(string email, CancellationToken cancellationToken)
     {
         var user = await _context.Users
             .AsNoTracking()
-            .FirstOrDefaultAsync(u => u.Email == email, ct);
-        if (user == null)
-            throw new UnauthorizedAccessException();
+            .FirstOrDefaultAsync(u => u.Email == email, cancellationToken);
+        
+        if (user == null || user.IsBlocked)
+            throw new AuthorizationFailedException();
+        
         return user;
     }
     
@@ -69,7 +75,7 @@ public class CarService : ICarService
     public async Task<CarDto> GetById(int? id, CancellationToken cancellationToken)
     {
         if (id == null || id < 0)
-            throw new ArgumentException("ID must be valid.");
+            throw new InvalidIdException("ID must be valid.");
 
         var car = await _context.Cars
             .AsNoTracking()
@@ -93,7 +99,7 @@ public class CarService : ICarService
             .FirstOrDefaultAsync(cancellationToken);
 
         if (car == null)
-            throw new KeyNotFoundException($"No car with ID {id} found.");
+            throw new CarNotFoundException($"No car with ID {id} found.");
 
         return car;
     }
@@ -103,7 +109,7 @@ public class CarService : ICarService
         var seller = await _context.Users.FirstOrDefaultAsync(u => u.Email.Equals(sellerEmail), cancellationToken);
         
         if (seller == null)
-            throw new ArgumentException("No such seller was found.");
+            throw new UserNotFoundException("No such seller was found.");
 
         var hasActiveCar = await _context.Cars
             .AsNoTracking()
@@ -111,7 +117,7 @@ public class CarService : ICarService
             c => c.Seller == seller.Id && c.Status == (int)StatusEnum.Active,
             cancellationToken);
         if (seller.Role == (int) RolesEnum.User && hasActiveCar)
-            throw new ArgumentException("User cannot sell more than one car at a time.");
+            throw new UserSellLimitException("User cannot sell more than one car at a time.");
 
         if (createCarDto.Vin != null)
         {
@@ -120,7 +126,7 @@ public class CarService : ICarService
                 .AnyAsync(c => c.Vin == createCarDto.Vin, cancellationToken);
             
             if (vinExists)
-                throw new ArgumentException("Another car has this Vin."); 
+                throw new VinDuplicateException("Another car has this Vin."); 
         }
         
         var status = createCarDto.Status ?? StatusEnum.Active;
@@ -152,17 +158,17 @@ public class CarService : ICarService
         var requester = await GetRequester(requesterEmail, cancellationToken);
 
         if (requester == null)
-            throw new ArgumentException("No such requester was found.");
+            throw new AuthorizationFailedException("No such requester was found.");
 
         var car = await _context.Cars
             .Include(c => c.SellerNavigation)
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
         if (car == null)
-            throw new ArgumentException("Car not found.");
+            throw new CarNotFoundException("Car not found.");
 
         if (car.SellerNavigation.Id != requester.Id && !(requester.Role == (int)RolesEnum.Admin))
-            throw new ArgumentException("Seller is not allowed to update this car.");
+            throw new AuthorizationFailedException("Seller is not allowed to update this car.");
         
         var status = createCarDto.Status ?? StatusEnum.Active;
 
@@ -177,7 +183,7 @@ public class CarService : ICarService
                 cancellationToken);
 
             if (hasOtherActiveCar && createCarDto.Status == StatusEnum.Active)
-                throw new ArgumentException("User cannot have more than one active car.");
+                throw new UserSellLimitException("User cannot have more than one active car.");
         }
 
         if (!string.IsNullOrWhiteSpace(createCarDto.Vin))
@@ -187,7 +193,7 @@ public class CarService : ICarService
                 cancellationToken);
 
             if (vinExists)
-                throw new ArgumentException("Another car has this VIN.");
+                throw new VinDuplicateException("Another car has this VIN.");
         }
         
         car.Price = createCarDto.Price;
@@ -216,13 +222,13 @@ public class CarService : ICarService
             .FirstOrDefaultAsync(c => c.Id == id, cancellationToken);
 
         if (car == null)
-            throw new KeyNotFoundException("Car not found.");
+            throw new CarNotFoundException("Car not found.");
 
         var requester = await GetRequester(requesterEmail, cancellationToken);
 
         if (requester.Role != (int)RolesEnum.Admin &&
             car.SellerNavigation.Id != requester.Id)
-            throw new UnauthorizedAccessException();
+            throw new AuthorizationFailedException();
 
         foreach (var uf in car.UserFavorites)
         {

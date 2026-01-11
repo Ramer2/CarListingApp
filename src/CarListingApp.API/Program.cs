@@ -71,7 +71,7 @@ app.UseCors("AllowBlazor");
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.UseMiddleware<BlockedUserMiddleware>();
+app.UseMiddleware<ExceptionMiddleware>();
 
 app.MapControllers();
 

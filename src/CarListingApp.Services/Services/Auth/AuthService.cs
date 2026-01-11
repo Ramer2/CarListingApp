@@ -1,8 +1,12 @@
-﻿using CarListingApp.DAL.DBContext;
+﻿using System.ComponentModel.DataAnnotations;
+using CarListingApp.DAL.DBContext;
 using CarListingApp.Models.Models;
 using CarListingApp.Models.Models.Enums;
 using CarListingApp.Services.DTOs.Auth;
 using CarListingApp.Services.DTOs.User;
+using CarListingApp.Services.Exceptions.Auth;
+using CarListingApp.Services.Exceptions.User;
+using CarListingApp.Services.Exceptions.Validation;
 using CarListingApp.Services.Services.TokenService;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
@@ -24,7 +28,7 @@ public class AuthService : IAuthService
     public async Task<TokenDto> Login(LoginUserDto loginUserDto, CancellationToken cancellationToken)
     {
         if (loginUserDto.Email == null && loginUserDto.Username == null)
-            throw new ArgumentException("Email or username is required.");
+            throw new AuthenticationFailedException("Invalid credentials.");
 
         User? user;
             
@@ -41,12 +45,15 @@ public class AuthService : IAuthService
                 .FirstOrDefaultAsync(u => u.Username.Equals(loginUserDto.Username), cancellationToken);
         }
 
-        if (user == null || user.IsBlocked)
-            throw new AccessViolationException();
+        if (user == null)
+            throw new AuthenticationFailedException("Invalid credentials.");
+        
+        if (user.IsBlocked)
+            throw new UserBlockedException();
 
         var verification = _passwordHasher.VerifyHashedPassword(user, user.PasswordHash, loginUserDto.Password);
         if (verification == PasswordVerificationResult.Failed)
-            throw new AccessViolationException();
+            throw new AuthenticationFailedException("Invalid credentials.");
 
         var token = new TokenDto
         {
@@ -62,15 +69,15 @@ public class AuthService : IAuthService
     public async Task Register(CreateUserDto createUserDto, CancellationToken cancellationToken)
     {
         if (!(createUserDto.Role == RolesEnum.Dealer || createUserDto.Role == RolesEnum.User))
-            throw new AccessViolationException("You can register only a user or a dealer.");
+            throw new ValidationException();
         
         if (string.IsNullOrEmpty(createUserDto.Password))
-            throw new ArgumentException("Password must be valid.");
+            throw new InvalidPasswordException();
         
         if (await _context.Users.AnyAsync(u => u.Email == createUserDto.Email, cancellationToken))
-            throw new ArgumentException("An account with this email already exists.");
+            throw new UserAlreadyExistsException("This email is already taken.");
         if (await _context.Users.AnyAsync(u => u.Username == createUserDto.Username, cancellationToken))
-            throw new ArgumentException("This username is already taken.");
+            throw new UserAlreadyExistsException("This username is already taken.");
 
         var newUser = new User
         {

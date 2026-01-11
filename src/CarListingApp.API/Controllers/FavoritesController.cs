@@ -20,42 +20,24 @@ public class FavoritesController : ControllerBase
     [HttpPost("")]
     public async Task<IResult> AddToFavorites([FromBody] int carId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var email = User.FindFirst(ClaimTypes.Email)?.Value;
-            if (email == null)
-                return Results.Unauthorized();
+        var email = User.FindFirst(ClaimTypes.Email)?.Value;
+        if (email == null)
+            return Results.Unauthorized();
 
-            await _favoritesService.AddToFavorites(carId, email, cancellationToken);
-            return Results.Created();
-        }
-        catch (ArgumentException ex)
-        {
-            return Results.BadRequest(ex.Message);
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Results.NotFound(ex.Message);
-        }
+        await _favoritesService.AddToFavorites(carId, email, cancellationToken);
+        return Results.Created();
     }
     
     [Authorize(Roles = "Admin, User, Dealer")]
     [HttpDelete("{carId}")]
     public async Task<IResult> RemoveFromFavorites(int carId, CancellationToken cancellationToken)
     {
-        try
-        {
-            var email = User.FindFirst(ClaimTypes.Email)?.Value;
-            if (email == null)
-                return Results.Unauthorized();
+        var email = User.FindFirst(ClaimTypes.Email)?.Value;
+        if (email == null)
+            return Results.Unauthorized();
 
-            await _favoritesService.RemoveFromFavorites(carId, email, cancellationToken);
-            return Results.NoContent();
-        }
-        catch (KeyNotFoundException ex)
-        {
-            return Results.NotFound(ex.Message);
-        }
+        await _favoritesService.RemoveFromFavorites(carId, email, cancellationToken);
+        return Results.NoContent();
     }
 
     [Authorize(Roles = "Admin, User, Dealer")]

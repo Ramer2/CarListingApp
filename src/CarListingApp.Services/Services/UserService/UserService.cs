@@ -4,6 +4,9 @@ using CarListingApp.Models.Models;
 using CarListingApp.Models.Models.Enums;
 using CarListingApp.Services.DTOs.Car;
 using CarListingApp.Services.DTOs.User;
+using CarListingApp.Services.Exceptions.Auth;
+using CarListingApp.Services.Exceptions.User;
+using CarListingApp.Services.Exceptions.Validation;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 
@@ -26,7 +29,11 @@ public class UserService : IUserService
             .AsNoTracking()
             .FirstOrDefaultAsync(u => u.Email == email, ct);
         if (user == null)
-            throw new AccessViolationException("Invalid credentials.");
+            throw new AuthenticationFailedException();
+        
+        if (user.IsBlocked)
+            throw new UserBlockedException();
+        
         return user;
     }
     
@@ -99,7 +106,7 @@ public class UserService : IUserService
     {
         var requester = await GetRequester(requesterEmail, cancellationToken);
         if ((RolesEnum)requester.Role != RolesEnum.Admin && requester.Id != id)
-            throw new AccessViolationException();
+            throw new AuthorizationFailedException();
 
         var user = await _context.Users
             .AsNoTracking()
@@ -132,7 +139,7 @@ public class UserService : IUserService
             .FirstOrDefaultAsync(cancellationToken);
 
         if (user == null)
-            throw new KeyNotFoundException($"User with ID {id} not found.");
+            throw new UserNotFoundException($"User with ID {id} not found.");
 
         return user;
     }
@@ -141,7 +148,7 @@ public class UserService : IUserService
     {
         var requester = await GetRequester(requesterEmail, cancellationToken);
         if ((RolesEnum)requester.Role != RolesEnum.Admin && !requester.Email.Equals(email))
-            throw new AccessViolationException();
+            throw new AuthorizationFailedException();
 
         var user = await _context.Users
             .AsNoTracking()
@@ -174,7 +181,7 @@ public class UserService : IUserService
             .FirstOrDefaultAsync(cancellationToken);
 
         if (user == null)
-            throw new KeyNotFoundException($"User with email {email} not found.");
+            throw new UserNotFoundException($"User with email {email} not found.");
 
         return user;
     }
@@ -185,16 +192,16 @@ public class UserService : IUserService
         {
             var requester = await GetRequester(requesterEmail, cancellationToken);
             if ((RolesEnum)requester.Role != RolesEnum.Admin)
-                throw new AccessViolationException();
+                throw new AuthorizationFailedException();
         }
         
         if (string.IsNullOrEmpty(createUserDto.Password))
-            throw new ArgumentException("Password must be valid.");
+            throw new InvalidPasswordException("Password must be valid.");
         
         if (await _context.Users.AnyAsync(u => u.Email == createUserDto.Email, cancellationToken))
-            throw new ArgumentException("An account with this email already exists.");
+            throw new UserAlreadyExistsException("An account with this email already exists.");
         if (await _context.Users.AnyAsync(u => u.Username == createUserDto.Username, cancellationToken))
-            throw new ArgumentException("This username is already taken.");
+            throw new UserAlreadyExistsException("This username is already taken.");
 
         var newUser = new User
         {
@@ -220,22 +227,22 @@ public class UserService : IUserService
             if (requester.Id != id
                 || requester.Role != (int) updateUserDto.Role
                 || requester.IsBlocked != updateUserDto.IsBlocked)
-                throw new AccessViolationException();
+                throw new AuthorizationFailedException();
         }
 
         var user = await _context.Users
             .Include(u => u.Cars)
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         if (user == null)
-            throw new KeyNotFoundException($"No user found with ID {id}.");
+            throw new UserNotFoundException($"No user found with ID {id}.");
 
         if (!user.Email.Equals(updateUserDto.Email) &&
             await _context.Users.AnyAsync(u => u.Email == updateUserDto.Email, cancellationToken))
-            throw new ArgumentException("An account with this email already exists.");
+            throw new UserAlreadyExistsException("An account with this email already exists.");
 
         if (!user.Username.Equals(updateUserDto.Username) &&
             await _context.Users.AnyAsync(u => u.Username == updateUserDto.Username, cancellationToken))
-            throw new ArgumentException("An account with this username already exists.");
+            throw new UserAlreadyExistsException("An account with this username already exists.");
 
         user.Email = updateUserDto.Email;
         user.Username = updateUserDto.Username;
@@ -253,7 +260,7 @@ public class UserService : IUserService
     {
         var requester = await GetRequester(requesterEmail, cancellationToken);
         if ((RolesEnum)requester.Role != RolesEnum.Admin && requester.Id != id)
-            throw new AccessViolationException();
+            throw new AuthorizationFailedException();
         
         var user = await _context.Users
             .Include(u => u.UserFavorites)
@@ -261,7 +268,7 @@ public class UserService : IUserService
             .ThenInclude(c => c.ServiceRecords)
             .FirstOrDefaultAsync(u => u.Id == id, cancellationToken);
         if (user == null)
-            throw new KeyNotFoundException($"No user found with ID {id}.");
+            throw new UserNotFoundException($"No user found with ID {id}.");
 
         foreach (var carFav in user.UserFavorites)
             _context.UserFavorites.Remove(carFav);

@@ -2,6 +2,9 @@
 using CarListingApp.Models.Models;
 using CarListingApp.Models.Models.Enums;
 using CarListingApp.Services.DTOs.Car;
+using CarListingApp.Services.Exceptions.Car;
+using CarListingApp.Services.Exceptions.Favorite;
+using CarListingApp.Services.Exceptions.User;
 using Microsoft.EntityFrameworkCore;
 
 namespace CarListingApp.Services.Services.Favorite;
@@ -21,20 +24,20 @@ public class FavoritesService : IFavoritesService
             .Where(u => u.Email == userEmail)
             .Select(u => new { u.Id })
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new KeyNotFoundException("User not found.");
+            ?? throw new UserNotFoundException("User not found.");
 
         var alreadyFavorited = await _context.UserFavorites
             .AnyAsync(uf => uf.UserId == user.Id && uf.CarId == carId, cancellationToken);
 
         if (alreadyFavorited)
-            throw new ArgumentException("Car already in favorites.");
+            throw new CarAlreadyFavoritedException("Car already in favorites.");
 
         var carExists = await _context.Cars
             .AsNoTracking()
             .AnyAsync(c => c.Id == carId, cancellationToken);
 
         if (!carExists)
-            throw new KeyNotFoundException("Car not found.");
+            throw new CarNotFoundException("Car not found.");
 
         _context.UserFavorites.Add(new UserFavorite
         {
@@ -51,7 +54,7 @@ public class FavoritesService : IFavoritesService
             .Where(u => u.Email == userEmail)
             .Select(u => new { u.Id })
             .FirstOrDefaultAsync(cancellationToken)
-            ?? throw new KeyNotFoundException("User not found.");
+            ?? throw new UserNotFoundException("User not found.");
 
         var favorite = await _context.UserFavorites
             .FirstOrDefaultAsync(
@@ -59,7 +62,7 @@ public class FavoritesService : IFavoritesService
                 cancellationToken);
 
         if (favorite == null)
-            throw new KeyNotFoundException("Favorite not found.");
+            throw new FavoriteNotFoundException("Favorite not found.");
 
         _context.UserFavorites.Remove(favorite);
         await _context.SaveChangesAsync(cancellationToken);
@@ -67,6 +70,12 @@ public class FavoritesService : IFavoritesService
 
     public async Task<List<CarDto>> GetFavorites(string userEmail, CancellationToken cancellationToken)
     {
+        var userCheck = await _context.Users
+            .AnyAsync(u => u.Email == userEmail);
+        
+        if (!userCheck)
+            throw new UserNotFoundException("User not found.");
+        
         return await _context.UserFavorites
             .Where(uf => uf.User.Email == userEmail)
             .Select(uf => new CarDto

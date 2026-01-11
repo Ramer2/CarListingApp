@@ -19,43 +19,13 @@ public class AuthController : ControllerBase
     [HttpPost("login")]
     public async Task<IResult> Login([FromBody] LoginUserDto userDto, CancellationToken cancellationToken)
     {
-        try
-        {
-            return Results.Ok(await _authService.Login(userDto, cancellationToken));
-        }
-        catch (ArgumentException ex)
-        {
-            return Results.BadRequest(ex.Message);
-        }
-        catch (AccessViolationException ex)
-        {
-            return Results.Unauthorized();
-        }
-        catch (Exception ex)
-        {
-            return Results.Problem(ex.Message);
-        }
+        return Results.Ok(await _authService.Login(userDto, cancellationToken));
     }
 
     [HttpPost("register")]
     public async Task<IResult> Register([FromBody] CreateUserDto createUserDto, CancellationToken cancellationToken)
     {
-        try
-        {
-            await _authService.Register(createUserDto, cancellationToken);
-            return Results.Created();
-        }
-        catch (ArgumentException ex)
-        {
-            return Results.BadRequest(ex.Message);
-        }
-        catch (AccessViolationException ex)
-        {
-            return Results.Unauthorized();
-        }
-        catch (Exception ex)
-        {
-            return Results.Problem(ex.Message);
-        }
+        await _authService.Register(createUserDto, cancellationToken);
+        return Results.Created();
     }
 }
